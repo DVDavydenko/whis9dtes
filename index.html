@@ -1,454 +1,988 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>EdHistory: комплексне оцінювання</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; }
-    h1, h2, h3, .serif { font-family: 'Merriweather', serif; }
-    .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 200px; }
-    .fade-in { animation: fadeIn 0.4s; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .radio-custom:checked + label, .checkbox-custom:checked + label { background: #e0e7ff; border-color: #4f46e5; color: #3730a3; font-weight: 600; }
-    .sticky-timer { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(8px); }
-    @media (max-width: 640px) {
-      .grid-cols-1-sm { grid-template-columns: 1fr !important; }
-    }
-    #hidden-iframe { display: none; }
-  </style>
-</head>
-<body class="h-screen flex flex-col overflow-hidden text-slate-800">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тематична Вс.Іст.9кл</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-2: #f1f5f9;
+    --surface-3: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #4f46e5;
+    --primary-2: #6366f1;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  }
 
-<header class="bg-indigo-900 text-white shadow-md z-10 flex-shrink-0">
-  <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-    <div class="flex items-center space-x-2">
-      <span class="text-2xl">🏛️</span>
-      <span class="text-xl font-bold serif">EdHistory</span>
-      <span class="text-xs bg-indigo-700 px-2 py-1 rounded ml-2 hidden sm:inline-block">PRO</span>
+  body.dark {
+    --bg: #020617;
+    --surface: #0f172a;
+    --surface-2: #1e293b;
+    --surface-3: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #334155;
+    --primary: #818cf8;
+    --primary-2: #6366f1;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #f87171;
+    --shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background:
+      radial-gradient(circle at top, rgba(99,102,241,.14), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(16,185,129,.08), transparent 26%),
+      linear-gradient(180deg, var(--bg), var(--surface-2));
+    color: var(--text);
+    transition: background .25s ease, color .25s ease;
+  }
+
+  .container {
+    width: min(100%, 980px);
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .app-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    border-radius: 20px;
+  }
+
+  .hero {
+    overflow: hidden;
+    position: relative;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(99,102,241,.18), transparent 32%),
+      radial-gradient(circle at 80% 90%, rgba(16,185,129,.10), transparent 26%);
+    pointer-events: none;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .row { display: flex; gap: 16px; }
+  .wrap { flex-wrap: wrap; }
+  .between { justify-content: space-between; }
+  .center { align-items: center; }
+
+  .muted { color: var(--muted); }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+
+  .btn, .btn-ghost {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    border-radius: 14px;
+    padding: 13px 18px;
+    transition: transform .14s ease, opacity .14s ease, background .2s ease;
+  }
+
+  .btn {
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.18);
+  }
+
+  .btn:hover, .btn-ghost:hover { transform: translateY(-1px); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .input, .textarea, .select {
+    width: 100%;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 15px;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+
+  .input:focus, .textarea:focus, .select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, .18);
+  }
+
+  .textarea { min-height: 160px; resize: vertical; }
+
+  .screen { display: none; }
+  .screen.active {
+    display: block;
+    animation: fadeIn .35s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .progress-wrap {
+    width: 100%;
+    height: 10px;
+    background: var(--surface-3);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--success));
+    transition: width .35s ease;
+  }
+
+  .section-card, .question-card, .result-card {
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .question-title {
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  .options { display: grid; gap: 10px; }
+  .opt {
+    display: flex;
+    gap: 10px;
+    align-items: start;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color .16s ease, transform .16s ease, background .16s ease;
+  }
+  .opt:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
+  .opt input { margin-top: 3px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+  .badge.low { background: rgba(16,185,129,.14); color: var(--success); }
+  .badge.medium { background: rgba(245,158,11,.16); color: var(--warning); }
+  .badge.high { background: rgba(239,68,68,.14); color: var(--danger); }
+  .badge.critical { background: #7f1d1d; color: #fff; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .metric {
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .metric .label { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .metric .value { font-size: 28px; font-weight: 800; }
+
+  .theme-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 9px 14px;
+    cursor: pointer;
+  }
+
+  .small { font-size: 13px; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 760px) {
+    .container { padding: 14px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .row.mobile-col { flex-direction: column; }
+    .btn, .btn-ghost { width: 100%; }
+    .metric .value { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="container row between center wrap">
+    <div class="row center wrap">
+      <div class="pill">📚 <strong>Тематична Вс.Іст.9кл</strong></div>
+      <div id="timerBox" class="pill hidden">⏳ <span id="timer">40:00</span></div>
+      <div id="riskBadge" class="badge low hidden">ризик: low</div>
     </div>
-    <div id="user-info" class="hidden text-sm font-medium flex items-center">
-      <span id="role-badge" class="bg-indigo-600 px-3 py-1 rounded-full mr-4"></span>
-      <button onclick="logout()" class="text-indigo-300 hover:text-white">🚪 Вийти</button>
+    <div class="row center wrap">
+      <button id="themeToggle" class="theme-toggle">🌙 Тема</button>
+      <button id="saveIndicator" class="btn-ghost small hidden">💾 Чернетку збережено</button>
     </div>
   </div>
-</header>
+</div>
 
-<main class="flex-1 overflow-y-auto relative bg-slate-50" id="app-container"></main>
-
-<iframe id="hidden-iframe" name="hidden-iframe"></iframe>
-
-<script>
-  (function(){
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxH4KWZXWFMjKOXYfNMo1oIn7P_1bm1j-XY_rnW46PryE2_sMdBeBAqpfOAnoFlKwcohg/exec';
-    const TEACHER_PASSWORD = 'whis9dt';
-    const COMPLETED_KEY = 'edhistory_completed';
-
-    let appState = {
-      role: null, studentName: '', sessionId: null, currentVariant: null,
-      timerInterval: null, timeLeft: 0, startTime: null, answers: {},
-      openActionsCount: 0
-    };
-
-    const container = document.getElementById('app-container');
-
-    // ---------- БЕЗПЕЧНІ ЗАПИТИ (JSONP + FORM) ----------
-    function getJSONP(url, callbackName, callback) {
-      const script = document.createElement('script');
-      const fullUrl = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
-      window[callbackName] = (data) => {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        callback(data);
-      };
-      script.src = fullUrl;
-      script.onerror = () => {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        callback({ error: 'Network error' });
-      };
-      document.body.appendChild(script);
-    }
-
-    function postForm(url, data, callback) {
-      const iframe = document.getElementById('hidden-iframe');
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = url;
-      form.target = 'hidden-iframe';
-      form.style.display = 'none';
-
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'data';
-      input.value = JSON.stringify(data);
-      form.appendChild(input);
-
-      // Додаємо колбек для отримання результату через JSONP після відправки
-      const callbackName = 'cb_' + Date.now();
-      window[callbackName] = (resp) => {
-        delete window[callbackName];
-        callback(resp);
-      };
-      const callbackInput = document.createElement('input');
-      callbackInput.type = 'hidden';
-      callbackInput.name = 'callback';
-      callbackInput.value = callbackName;
-      form.appendChild(callbackInput);
-
-      document.body.appendChild(form);
-      form.submit();
-      setTimeout(() => document.body.removeChild(form), 1000);
-    }
-
-    // ---------- АВТОРИЗАЦІЯ ----------
-    window.login = function(role) {
-      if (role === 'teacher') {
-        const pwd = prompt("Введіть пароль вчителя:");
-        if (pwd !== TEACHER_PASSWORD) { alert("Невірний пароль!"); return; }
-        appState.role = 'teacher';
-        document.getElementById('user-info').classList.remove('hidden');
-        document.getElementById('role-badge').innerText = '👨‍🏫 Вчитель';
-        renderTeacherDashboard();
-      } else {
-        const name = document.getElementById('student-name')?.value.trim();
-        if (!name) { alert("Введіть ім'я"); return; }
-        if (JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]').includes(name)) {
-          alert("Ви вже проходили тест. Повторне проходження заборонено.");
-          return;
-        }
-        appState.role = 'student';
-        appState.studentName = name;
-        document.getElementById('user-info').classList.remove('hidden');
-        document.getElementById('role-badge').innerText = '🎒 ' + name;
-        startTest();
-      }
-    };
-
-    window.logout = function() {
-      clearInterval(appState.timerInterval);
-      appState = { role: null, studentName: '', sessionId: null, currentVariant: null, timerInterval: null, timeLeft: 0, startTime: null, answers: {}, openActionsCount: 0 };
-      renderLogin();
-    };
-
-    function renderLogin() {
-      document.getElementById('user-info').classList.add('hidden');
-      container.innerHTML = `
-        <div class="min-h-full flex items-center justify-center p-4 fade-in">
-          <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md">
-            <h1 class="text-2xl sm:text-3xl font-bold serif mb-2">Авторизація</h1>
-            <p class="text-slate-500 mb-4">Система комплексного оцінювання</p>
-            <button onclick="login('teacher')" class="w-full py-3 bg-indigo-600 text-white rounded mb-3">👨‍🏫 Вхід для Вчителя</button>
-            <div class="bg-slate-50 p-4 rounded border">
-              <label class="block text-sm mb-1">Приєднання до тестування</label>
-              <input type="text" id="student-name" class="w-full border p-3 rounded mb-3" placeholder="Прізвище та Ім'я">
-              <button onclick="login('student')" class="w-full py-3 bg-emerald-600 text-white rounded">🎒 Почати тест (40 хв)</button>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    // ---------- ТЕСТУВАННЯ ----------
-    function startTest() {
-      const callbackName = 'start_' + Date.now();
-      getJSONP(GAS_URL, callbackName, (data) => {
-        if (data.error) {
-          alert('Помилка завантаження тесту: ' + data.error);
-          logout();
-          return;
-        }
-        appState.sessionId = data.sessionId;
-        appState.currentVariant = data.variant;
-        appState.startTime = data.startTime;
-        appState.timeLeft = data.variant.duration;
-        appState.openActionsCount = 0;
-        renderTest();
-        startTimer();
-      });
-    }
-
-    function renderTest() {
-      const variant = appState.currentVariant;
-      let html = `
-        <div class="sticky-timer bg-white/90 border-b py-2 px-4 flex flex-wrap justify-between items-center">
-          <div class="font-bold text-sm sm:text-base truncate">${variant.title}</div>
-          <div class="flex items-center space-x-2 sm:space-x-3">
-            <span class="text-xs sm:text-sm">Залишилось:</span>
-            <div id="timer-display" class="bg-indigo-100 text-indigo-800 font-mono text-base sm:text-lg px-2 sm:px-3 py-1 rounded">${formatTime(appState.timeLeft)}</div>
-            <button onclick="submitTest()" class="bg-indigo-600 text-white px-3 sm:px-4 py-1.5 rounded text-sm">Здати</button>
+<main class="container">
+  <section id="screenWelcome" class="screen active">
+    <div class="app-card hero" style="padding:28px;">
+      <div style="position:relative; z-index:1;">
+        <div class="row between center mobile-col">
+          <div>
+            <div class="pill" style="margin-bottom:12px;">🏛️ Всесвітня історія • 9 клас</div>
+            <h1 style="margin:0 0 8px; font-size:clamp(28px,5vw,42px); line-height:1.1;">Сучасне тематичне оцінювання</h1>
+            <p class="muted" style="max-width:680px; line-height:1.7;">
+              Закрита частина перевіряється автоматично. Відкрита частина оцінюється автосистемою за критеріями й може бути уточнена вручну в Google Sheets.
+            </p>
           </div>
         </div>
-        <div class="max-w-4xl mx-auto p-3 sm:p-4 space-y-6">`;
-      
-      variant.sections.forEach((sec, idx) => {
-        html += `<div class="bg-white rounded-xl shadow-sm border"><div class="bg-slate-800 text-white px-4 sm:px-6 py-3"><h2 class="text-lg sm:text-xl">${sec.title}</h2><p class="text-xs sm:text-sm opacity-80">${sec.desc}</p></div><div class="p-4 sm:p-6 space-y-4">`;
-        
-        if (sec.type === 'mcq') {
-          sec.questions.forEach((q, i) => {
-            html += `<div class="border-b pb-3"><p class="font-semibold text-sm sm:text-base">${i+1}. ${q.q}</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">`;
-            q.options.forEach((opt, oIdx) => {
-              html += `<div><input type="radio" name="${q.id}" id="${q.id}_${oIdx}" value="${oIdx}" class="peer hidden radio-custom">
-                <label for="${q.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50 peer-checked:border-indigo-500 text-sm">${opt}</label></div>`;
-            });
-            html += `</div></div>`;
-          });
-        } else if (sec.type === 'matching' || sec.type === 'dragdrop') {
-          const d = sec.data;
-          html += `<div><p class="font-semibold text-sm sm:text-base">${d.q}</p><div class="space-y-3 mt-2">`;
-          d.items.forEach((item, iIdx) => {
-            html += `<div class="flex flex-col sm:flex-row sm:items-center gap-2"><div class="sm:w-1/2 bg-slate-50 p-2 rounded border text-sm">${item}</div>
-              <div class="sm:w-1/2"><select name="${d.id}_${iIdx}" class="w-full p-2 border rounded text-sm"><option value="-1" disabled selected>-- Оберіть --</option>`;
-            d.options.forEach((opt, oIdx) => html += `<option value="${oIdx}">${opt}</option>`);
-            html += `</select></div></div>`;
-          });
-          html += `</div></div>`;
-        } else if (sec.type === 'checkbox') {
-          const d = sec.data;
-          html += `<div><p class="font-semibold text-sm sm:text-base">${d.q}</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">`;
-          d.options.forEach((opt, oIdx) => {
-            html += `<div><input type="checkbox" name="${d.id}" id="${d.id}_${oIdx}" value="${oIdx}" class="peer hidden checkbox-custom">
-              <label for="${d.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50 peer-checked:border-indigo-500 text-sm">${opt}</label></div>`;
-          });
-          html += `</div></div>`;
-        } else if (sec.type === 'blanks') {
-          const d = sec.data;
-          html += `<div><p class="text-sm sm:text-base">${d.textBefore} `;
-          d.blanks.forEach((blank, idx) => {
-            html += `<select name="${d.id}_blank${idx}" class="inline-block w-auto mx-1 p-1 border rounded text-sm">`;
-            blank.options.forEach((opt, oIdx) => html += `<option value="${oIdx}">${opt}</option>`);
-            html += `</select> `;
-          });
-          html += `${d.textAfter}</p></div>`;
-        } else if (sec.type === 'shorttext') {
-          const d = sec.data;
-          html += `<div><p class="font-semibold text-sm sm:text-base">${d.q}</p>
-            <textarea name="${d.id}" rows="3" class="w-full border rounded p-3 text-sm mt-2" placeholder="Введіть коротку відповідь..."></textarea></div>`;
-        } else if (sec.type === 'sequence') {
-          html += `<div class="space-y-3">`;
-          [0,1,2,3].forEach(pos => {
-            html += `<div class="flex items-center space-x-2"><div class="bg-indigo-100 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-sm">${pos+1}</div>
-              <select name="${sec.id}_pos${pos}" class="flex-1 p-2 border rounded text-sm"><option value="" disabled selected>-- Оберіть --</option>`;
-            sec.items.forEach(item => html += `<option value="${item.id}">${item.text}</option>`);
-            html += `</select></div>`;
-          });
-          html += `</div>`;
-        } else if (sec.type === 'source') {
-          html += `<div class="bg-amber-50 border-l-4 border-amber-500 p-3 sm:p-4 italic text-sm">${sec.quote}<br><span class="font-bold">${sec.author}</span></div>`;
-          sec.questions.forEach((q, i) => {
-            html += `<div class="mt-4"><p class="font-semibold text-sm sm:text-base">${i+1}. ${q.q}</p><div class="grid grid-cols-1 gap-2 mt-2">`;
-            q.options.forEach((opt, oIdx) => {
-              html += `<div><input type="radio" name="${q.id}" id="${q.id}_${oIdx}" value="${oIdx}" class="peer hidden radio-custom">
-                <label for="${q.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50 text-sm">${opt}</label></div>`;
-            });
-            html += `</div></div>`;
-          });
-        } else if (sec.type === 'open') {
-          html += `<div class="bg-slate-50 p-3 sm:p-4 rounded border text-sm">${sec.q}</div>
-            <textarea id="open-answer" rows="6" class="w-full border rounded p-3 text-sm mt-3" placeholder="Ваша розгорнута відповідь..."></textarea>`;
-        }
-        html += `</div></div>`;
-      });
-      html += `<div class="text-center pt-4 pb-6"><button onclick="submitTest()" class="bg-emerald-600 text-white text-lg sm:text-xl py-3 sm:px-12 rounded-xl">Завершити тест</button></div></div>`;
-      container.innerHTML = html;
 
-      const openTextarea = document.getElementById('open-answer');
-      if (openTextarea) {
-        const countAction = () => { appState.openActionsCount++; };
-        openTextarea.addEventListener('input', countAction);
-        openTextarea.addEventListener('keydown', countAction);
-        openTextarea.addEventListener('paste', countAction);
-        openTextarea.addEventListener('cut', countAction);
+        <div class="grid-2" style="margin-top:20px;">
+          <div class="app-card" style="padding:18px;">
+            <div class="small muted" style="margin-bottom:8px;">Початок</div>
+            <label class="small muted">Прізвище та ім’я</label>
+            <input id="studentName" class="input" placeholder="Наприклад: Петренко Іван">
+            <div style="height:10px;"></div>
+            <label class="small muted">Клас</label>
+            <input id="className" class="input" placeholder="Наприклад: 9-А">
+            <div style="height:14px;"></div>
+            <button id="startBtn" class="btn">🚀 Розпочати тест</button>
+          </div>
+
+          <div class="app-card" style="padding:18px;">
+            <div class="small muted" style="margin-bottom:10px;">Що враховує система</div>
+            <ul class="muted" style="margin:0; padding-left:18px; line-height:1.9;">
+              <li>автоматичну перевірку закритих завдань</li>
+              <li>автоперевірку відкритої відповіді за критеріями</li>
+              <li>індекс доброчесності</li>
+              <li>автозбереження чернетки</li>
+              <li>відновлення після випадкового перезавантаження</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenTest" class="screen">
+    <div class="app-card section-card">
+      <div class="row between center mobile-col">
+        <div style="flex:1;">
+          <div id="variantTitle" style="font-weight:800; font-size:22px; margin-bottom:8px;"></div>
+          <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
+          <div class="muted small" style="margin-top:8px;"><span id="progressLabel">0%</span> виконано</div>
+        </div>
+        <div class="row center wrap" style="min-width:220px;">
+          <button id="submitBtn" class="btn">✅ Завершити</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="questionsContainer"></div>
+  </section>
+
+  <section id="screenResult" class="screen">
+    <div class="app-card section-card">
+      <div class="row between center mobile-col">
+        <div>
+          <div class="pill" style="margin-bottom:10px;">🏁 Результат зафіксовано</div>
+          <h2 style="margin:0 0 6px; font-size:32px;">Роботу надіслано</h2>
+          <div class="muted">Дані збережено в Google Sheets, а короткий звіт надіслано в Telegram.</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:20px;">
+        <div class="metric">
+          <div class="label">Закрита частина</div>
+          <div id="resultClosed" class="value">0</div>
+        </div>
+        <div class="metric">
+          <div class="label">Відкрита частина (авто)</div>
+          <div id="resultOpenAuto" class="value">0</div>
+        </div>
+        <div class="metric">
+          <div class="label">Попередній сумарний бал</div>
+          <div id="resultPreliminary" class="value">0</div>
+        </div>
+        <div class="metric">
+          <div class="label">Індекс доброчесності</div>
+          <div id="resultIntegrity" class="value">100</div>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;">
+        <span id="resultRiskBadge" class="badge low">ризик: low</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const GAS_URL = 'YOUR_GAS_URL';
+
+  const STORAGE_KEY = 'world_history_9_test_state_v3';
+  const THEME_KEY = 'world_history_9_theme';
+
+  let appState = {
+    sessionId: null,
+    variant: null,
+    studentName: '',
+    className: '',
+    startTime: null,
+    answers: {},
+    openActionsCount: 0,
+    timerInterval: null,
+    timeLeft: 2400,
+    telemetry: {
+      pasteCount: 0,
+      blurCount: 0,
+      keydownCount: 0,
+      inputEventsCount: 0,
+      backspaceCount: 0,
+      focusLossSeconds: 0,
+      finalTextLength: 0
+    },
+    focusLostAt: null,
+    result: null
+  };
+
+  const el = {
+    screenWelcome: document.getElementById('screenWelcome'),
+    screenTest: document.getElementById('screenTest'),
+    screenResult: document.getElementById('screenResult'),
+    studentName: document.getElementById('studentName'),
+    className: document.getElementById('className'),
+    startBtn: document.getElementById('startBtn'),
+    submitBtn: document.getElementById('submitBtn'),
+    questionsContainer: document.getElementById('questionsContainer'),
+    variantTitle: document.getElementById('variantTitle'),
+    progressBar: document.getElementById('progressBar'),
+    progressLabel: document.getElementById('progressLabel'),
+    timer: document.getElementById('timer'),
+    timerBox: document.getElementById('timerBox'),
+    riskBadge: document.getElementById('riskBadge'),
+    themeToggle: document.getElementById('themeToggle'),
+    saveIndicator: document.getElementById('saveIndicator'),
+    resultClosed: document.getElementById('resultClosed'),
+    resultOpenAuto: document.getElementById('resultOpenAuto'),
+    resultPreliminary: document.getElementById('resultPreliminary'),
+    resultIntegrity: document.getElementById('resultIntegrity'),
+    resultRiskBadge: document.getElementById('resultRiskBadge')
+  };
+
+  function switchScreen(name) {
+    [el.screenWelcome, el.screenTest, el.screenResult].forEach(s => s.classList.remove('active'));
+    if (name === 'welcome') el.screenWelcome.classList.add('active');
+    if (name === 'test') el.screenTest.classList.add('active');
+    if (name === 'result') el.screenResult.classList.add('active');
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function showSavedIndicator() {
+    el.saveIndicator.classList.remove('hidden');
+    setTimeout(() => el.saveIndicator.classList.add('hidden'), 1400);
+  }
+
+  function setRiskBadge(level, targetEl) {
+    if (!targetEl) return;
+    targetEl.className = `badge ${level}`;
+    targetEl.textContent = `ризик: ${level}`;
+    targetEl.classList.remove('hidden');
+  }
+
+  function setTheme(theme) {
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    localStorage.setItem(THEME_KEY, theme);
+  }
+
+  function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(saved || (prefersDark ? 'dark' : 'light'));
+    el.themeToggle.onclick = () => {
+      const dark = document.body.classList.contains('dark');
+      setTheme(dark ? 'light' : 'dark');
+    };
+  }
+
+  function saveLocalState() {
+    const safe = {
+      sessionId: appState.sessionId,
+      variant: appState.variant,
+      studentName: appState.studentName,
+      className: appState.className,
+      startTime: appState.startTime,
+      answers: appState.answers,
+      openActionsCount: appState.openActionsCount,
+      timeLeft: appState.timeLeft,
+      telemetry: appState.telemetry
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
+    showSavedIndicator();
+  }
+
+  function clearLocalState() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function restoreLocalState() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    try {
+      const saved = JSON.parse(raw);
+      if (!saved.sessionId || !saved.variant) return false;
+      appState = {
+        ...appState,
+        ...saved
+      };
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function getAnsweredCount() {
+    const keys = Object.keys(appState.answers);
+    return keys.filter(k => {
+      const v = appState.answers[k];
+      if (Array.isArray(v)) return v.length > 0;
+      return v !== null && v !== undefined && String(v).trim() !== '';
+    }).length;
+  }
+
+  function estimateTotalInputs() {
+    if (!appState.variant) return 1;
+    let total = 0;
+    appState.variant.sections.forEach(sec => {
+      if (sec.type === 'mcq') total += sec.questions.length;
+      else if (sec.type === 'matching' || sec.type === 'dragdrop') total += sec.data.items.length;
+      else if (sec.type === 'checkbox') total += 1;
+      else if (sec.type === 'blanks') total += sec.data.blanks.length;
+      else if (sec.type === 'shorttext') total += 1;
+      else if (sec.type === 'sequence') total += sec.items.length;
+      else if (sec.type === 'source') total += sec.questions.length;
+      else if (sec.type === 'open') total += 1;
+    });
+    return Math.max(total, 1);
+  }
+
+  function updateProgress() {
+    const pct = Math.round((getAnsweredCount() / estimateTotalInputs()) * 100);
+    el.progressBar.style.width = pct + '%';
+    el.progressLabel.textContent = pct + '%';
+  }
+
+  function startTimer() {
+    clearInterval(appState.timerInterval);
+    el.timerBox.classList.remove('hidden');
+    el.timer.textContent = formatTime(appState.timeLeft);
+
+    appState.timerInterval = setInterval(() => {
+      appState.timeLeft--;
+      el.timer.textContent = formatTime(appState.timeLeft);
+      if (appState.timeLeft <= 0) {
+        clearInterval(appState.timerInterval);
+        submitTest();
       }
-    }
+    }, 1000);
+  }
 
-    function startTimer() {
-      appState.timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - appState.startTime) / 1000);
-        appState.timeLeft = Math.max(0, appState.currentVariant.duration - elapsed);
-        const disp = document.getElementById('timer-display');
-        if (disp) {
-          disp.innerText = formatTime(appState.timeLeft);
-          if (appState.timeLeft <= 300) disp.classList.add('bg-red-100', 'text-red-800');
+  function postJSON(payload, callback) {
+    fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(callback)
+    .catch(err => callback({ success: false, error: String(err) }));
+  }
+
+  function getJSON(url, callback) {
+    fetch(url)
+      .then(r => r.json())
+      .then(callback)
+      .catch(err => callback({ error: String(err) }));
+  }
+
+  function createOptionRadio(name, value, text, checked, onChange) {
+    const wrap = document.createElement('label');
+    wrap.className = 'opt';
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = name;
+    input.value = value;
+    if (checked) input.checked = true;
+    input.addEventListener('change', onChange);
+    const span = document.createElement('div');
+    span.textContent = text;
+    wrap.append(input, span);
+    return wrap;
+  }
+
+  function createOptionCheckbox(id, value, text, checked, onChange) {
+    const wrap = document.createElement('label');
+    wrap.className = 'opt';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = value;
+    if (checked) input.checked = true;
+    input.addEventListener('change', onChange);
+    const span = document.createElement('div');
+    span.textContent = text;
+    wrap.append(input, span);
+    return wrap;
+  }
+
+  function bindOpenTextareaTracking(textarea) {
+    textarea.addEventListener('input', () => {
+      appState.telemetry.inputEventsCount++;
+      appState.openActionsCount++;
+      appState.telemetry.finalTextLength = textarea.value.length;
+      appState.answers.openAnswer = textarea.value;
+      saveLocalState();
+      updateProgress();
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      appState.telemetry.keydownCount++;
+      if (e.key === 'Backspace') appState.telemetry.backspaceCount++;
+    });
+
+    textarea.addEventListener('paste', () => {
+      appState.telemetry.pasteCount++;
+      appState.openActionsCount++;
+    });
+
+    window.addEventListener('blur', () => {
+      appState.telemetry.blurCount++;
+      appState.focusLostAt = Date.now();
+    });
+
+    window.addEventListener('focus', () => {
+      if (appState.focusLostAt) {
+        appState.telemetry.focusLossSeconds += Math.round((Date.now() - appState.focusLostAt) / 1000);
+        appState.focusLostAt = null;
+      }
+    });
+  }
+
+  function renderTest() {
+    switchScreen('test');
+    el.variantTitle.textContent = appState.variant.title;
+    el.questionsContainer.innerHTML = '';
+
+    appState.variant.sections.forEach((sec, secIndex) => {
+      const card = document.createElement('div');
+      card.className = 'app-card section-card';
+      card.innerHTML = `
+        <div class="row between center mobile-col" style="margin-bottom:14px;">
+          <div>
+            <div class="pill">${sec.title}</div>
+            <div class="muted small" style="margin-top:8px;">${sec.desc || ''}</div>
+          </div>
+        </div>
+      `;
+
+      const body = document.createElement('div');
+
+      if (sec.type === 'mcq') {
+        sec.questions.forEach((q, i) => {
+          const qc = document.createElement('div');
+          qc.className = 'app-card question-card';
+          const title = document.createElement('div');
+          title.className = 'question-title';
+          title.textContent = `${i + 1}. ${q.q}`;
+          qc.appendChild(title);
+
+          const opts = document.createElement('div');
+          opts.className = 'options';
+          q.options.forEach((opt, idx) => {
+            const checked = String(appState.answers[q.id] ?? '') === String(idx);
+            opts.appendChild(createOptionRadio(q.id, idx, opt, checked, () => {
+              appState.answers[q.id] = String(idx);
+              saveLocalState();
+              updateProgress();
+            }));
+          });
+          qc.appendChild(opts);
+          body.appendChild(qc);
+        });
+      }
+
+      else if (sec.type === 'matching' || sec.type === 'dragdrop') {
+        const qc = document.createElement('div');
+        qc.className = 'app-card question-card';
+        const title = document.createElement('div');
+        title.className = 'question-title';
+        title.textContent = sec.data.q;
+        qc.appendChild(title);
+
+        sec.data.items.forEach((item, i) => {
+          const row = document.createElement('div');
+          row.style.marginBottom = '12px';
+          row.innerHTML = `<div class="small muted" style="margin-bottom:6px;">${item}</div>`;
+          const select = document.createElement('select');
+          select.className = 'select';
+          select.innerHTML = `<option value="">— Оберіть —</option>` +
+            sec.data.options.map((o, idx) => `<option value="${idx}">${o}</option>`).join('');
+          select.value = appState.answers[`${sec.data.id}_${i}`] ?? '';
+          select.addEventListener('change', () => {
+            appState.answers[`${sec.data.id}_${i}`] = select.value;
+            saveLocalState();
+            updateProgress();
+          });
+          row.appendChild(select);
+          qc.appendChild(row);
+        });
+
+        body.appendChild(qc);
+      }
+
+      else if (sec.type === 'checkbox') {
+        const qc = document.createElement('div');
+        qc.className = 'app-card question-card';
+        qc.innerHTML = `<div class="question-title">${sec.data.q}</div>`;
+        const opts = document.createElement('div');
+        opts.className = 'options';
+        const saved = Array.isArray(appState.answers[sec.data.id]) ? appState.answers[sec.data.id] : [];
+        sec.data.options.forEach((opt, idx) => {
+          opts.appendChild(createOptionCheckbox(sec.data.id, idx, opt, saved.includes(String(idx)), (e) => {
+            let arr = Array.isArray(appState.answers[sec.data.id]) ? [...appState.answers[sec.data.id]] : [];
+            if (e.target.checked) arr.push(String(idx));
+            else arr = arr.filter(v => v !== String(idx));
+            appState.answers[sec.data.id] = [...new Set(arr)];
+            saveLocalState();
+            updateProgress();
+          }));
+        });
+        qc.appendChild(opts);
+        body.appendChild(qc);
+      }
+
+      else if (sec.type === 'blanks') {
+        const qc = document.createElement('div');
+        qc.className = 'app-card question-card';
+        const row = document.createElement('div');
+        row.className = 'question-title';
+        row.textContent = `${sec.data.textBefore} _____ ${sec.data.textAfter}`;
+        qc.appendChild(row);
+
+        sec.data.blanks.forEach((blank, i) => {
+          const select = document.createElement('select');
+          select.className = 'select';
+          select.innerHTML = `<option value="">— Оберіть —</option>` +
+            blank.options.map((o, idx) => `<option value="${idx}">${o}</option>`).join('');
+          select.value = appState.answers[`${sec.data.id}_blank${i}`] ?? '';
+          select.addEventListener('change', () => {
+            appState.answers[`${sec.data.id}_blank${i}`] = select.value;
+            saveLocalState();
+            updateProgress();
+          });
+          qc.appendChild(select);
+        });
+
+        body.appendChild(qc);
+      }
+
+      else if (sec.type === 'shorttext') {
+        const qc = document.createElement('div');
+        qc.className = 'app-card question-card';
+        qc.innerHTML = `<div class="question-title">${sec.data.q}</div>`;
+        const ta = document.createElement('textarea');
+        ta.className = 'textarea';
+        ta.placeholder = 'Введіть коротку відповідь...';
+        ta.value = appState.answers[sec.data.id] || '';
+        ta.addEventListener('input', () => {
+          appState.answers[sec.data.id] = ta.value;
+          saveLocalState();
+          updateProgress();
+        });
+        qc.appendChild(ta);
+        body.appendChild(qc);
+      }
+
+      else if (sec.type === 'sequence') {
+        const qc = document.createElement('div');
+        qc.className = 'app-card question-card';
+        qc.innerHTML = `<div class="question-title">Розташуйте події в правильній послідовності</div>`;
+
+        for (let pos = 0; pos < sec.items.length; pos++) {
+          const holder = document.createElement('div');
+          holder.style.marginBottom = '12px';
+          holder.innerHTML = `<div class="small muted" style="margin-bottom:6px;">Позиція ${pos + 1}</div>`;
+          const select = document.createElement('select');
+          select.className = 'select';
+          select.innerHTML = `<option value="">— Оберіть —</option>` +
+            sec.items.map(item => `<option value="${item.id}">${item.text}</option>`).join('');
+          select.value = appState.answers[`${sec.id}_pos${pos}`] ?? '';
+          select.addEventListener('change', () => {
+            appState.answers[`${sec.id}_pos${pos}`] = select.value;
+            saveLocalState();
+            updateProgress();
+          });
+          holder.appendChild(select);
+          qc.appendChild(holder);
         }
-        if (appState.timeLeft <= 0) {
-          clearInterval(appState.timerInterval);
-          alert('Час вийшов!');
-          submitTest();
-        }
-      }, 200);
+
+        body.appendChild(qc);
+      }
+
+      else if (sec.type === 'source') {
+        const qc = document.createElement('div');
+        qc.className = 'app-card question-card';
+        qc.innerHTML = `
+          <div class="question-title">Прочитайте джерело</div>
+          <div class="app-card" style="padding:16px; background:var(--surface-2); border:1px solid var(--border); margin-bottom:14px;">
+            <div style="font-style:italic; line-height:1.8;">${sec.quote}</div>
+            <div class="muted small" style="margin-top:8px;">${sec.author}</div>
+          </div>
+        `;
+
+        sec.questions.forEach((q, i) => {
+          const block = document.createElement('div');
+          block.style.marginTop = '12px';
+          block.innerHTML = `<div class="question-title">${i + 1}. ${q.q}</div>`;
+          const opts = document.createElement('div');
+          opts.className = 'options';
+          q.options.forEach((opt, idx) => {
+            const checked = String(appState.answers[q.id] ?? '') === String(idx);
+            opts.appendChild(createOptionRadio(q.id, idx, opt, checked, () => {
+              appState.answers[q.id] = String(idx);
+              saveLocalState();
+              updateProgress();
+            }));
+          });
+          block.appendChild(opts);
+          qc.appendChild(block);
+        });
+
+        body.appendChild(qc);
+      }
+
+      else if (sec.type === 'open') {
+        const qc = document.createElement('div');
+        qc.className = 'app-card question-card';
+        qc.innerHTML = `
+          <div class="question-title">${sec.q}</div>
+          <div class="muted small" style="margin-bottom:10px;">
+            Порада: наведіть порівняння, причини, наслідки, використайте історичні поняття.
+          </div>
+        `;
+        const ta = document.createElement('textarea');
+        ta.className = 'textarea';
+        ta.placeholder = 'Напишіть розгорнуту відповідь...';
+        ta.value = appState.answers.openAnswer || '';
+        qc.appendChild(ta);
+        bindOpenTextareaTracking(ta);
+        body.appendChild(qc);
+      }
+
+      card.appendChild(body);
+      el.questionsContainer.appendChild(card);
+    });
+
+    updateProgress();
+    startTimer();
+  }
+
+  function autosaveRemote() {
+    if (!appState.sessionId) return;
+    postJSON({
+      action: 'autosave',
+      sessionId: appState.sessionId,
+      studentName: appState.studentName,
+      className: appState.className,
+      startTime: appState.startTime,
+      timeLeft: appState.timeLeft,
+      answers: appState.answers,
+      openActionsCount: appState.openActionsCount,
+      telemetry: appState.telemetry
+    }, () => {});
+  }
+
+  function restoreRemoteAutosave(sessionId) {
+    return fetch(`${GAS_URL}?action=restore&sessionId=${encodeURIComponent(sessionId)}`)
+      .then(r => r.json())
+      .then(resp => resp.autosave || null)
+      .catch(() => null);
+  }
+
+  async function startTest() {
+    const studentName = el.studentName.value.trim();
+    const className = el.className.value.trim();
+
+    if (!studentName) {
+      alert("Введіть прізвище та ім'я.");
+      return;
+    }
+    if (!className) {
+      alert("Введіть клас.");
+      return;
     }
 
-    function formatTime(s) {
-      let m = Math.floor(s/60), sec = s%60;
-      return `${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
-    }
+    el.startBtn.disabled = true;
 
-    function collectAnswers() {
-      const answers = {};
-      document.querySelectorAll('input[type="radio"]:checked').forEach(r => answers[r.name] = r.value);
-      document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-        if (!answers[cb.name]) answers[cb.name] = [];
-        answers[cb.name].push(cb.value);
-      });
-      document.querySelectorAll('select').forEach(s => { if (s.value && s.value !== '-1') answers[s.name] = s.value; });
-      document.querySelectorAll('textarea').forEach(t => { if (t.id !== 'open-answer') answers[t.name] = t.value; });
-      return answers;
-    }
+    getJSON(GAS_URL, (data) => {
+      el.startBtn.disabled = false;
+      if (data.error) {
+        alert('Помилка завантаження тесту: ' + data.error);
+        return;
+      }
 
-    window.submitTest = function() {
-      clearInterval(appState.timerInterval);
-      const answers = collectAnswers();
-      const openAnswer = document.getElementById('open-answer')?.value || '';
-      const openActionsCount = appState.openActionsCount;
-      
-      const postData = {
-        sessionId: appState.sessionId,
-        studentName: appState.studentName,
-        answers: answers,
-        openAnswer: openAnswer,
-        openActionsCount: openActionsCount
+      appState.sessionId = data.sessionId;
+      appState.variant = data.variant;
+      appState.studentName = studentName;
+      appState.className = className;
+      appState.startTime = data.startTime;
+      appState.timeLeft = data.variant.duration || 2400;
+      appState.answers = {};
+      appState.openActionsCount = 0;
+      appState.telemetry = {
+        pasteCount: 0,
+        blurCount: 0,
+        keydownCount: 0,
+        inputEventsCount: 0,
+        backspaceCount: 0,
+        focusLossSeconds: 0,
+        finalTextLength: 0
       };
 
-      postForm(GAS_URL, postData, (data) => {
-        if (!data.success) {
-          alert('Помилка: ' + (data.error || 'Невідома помилка'));
-          return;
-        }
-        
-        const completed = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]');
-        if (!completed.includes(appState.studentName)) {
-          completed.push(appState.studentName);
-          localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
-        }
-        
-        renderStudentResults(data.closedScore, !!openAnswer);
-      });
+      saveLocalState();
+      renderTest();
+    });
+  }
+
+  function fillResults(resp) {
+    el.resultClosed.textContent = Number(resp.closedScore || 0).toFixed(2);
+    el.resultOpenAuto.textContent = Number(resp.openAutoScore || 0).toFixed(2);
+    el.resultPreliminary.textContent = Number(resp.preliminaryFinalScore || 0).toFixed(2);
+    el.resultIntegrity.textContent = Number(resp.integrityIndex || 0).toFixed(0);
+    setRiskBadge(resp.riskLevel || 'low', el.resultRiskBadge);
+    setRiskBadge(resp.riskLevel || 'low', el.riskBadge);
+  }
+
+  function submitTest() {
+    clearInterval(appState.timerInterval);
+
+    const payload = {
+      sessionId: appState.sessionId,
+      studentName: appState.studentName,
+      className: appState.className,
+      answers: appState.answers,
+      openAnswer: appState.answers.openAnswer || '',
+      openActionsCount: appState.openActionsCount || 0,
+      telemetry: {
+        ...appState.telemetry,
+        finalTextLength: (appState.answers.openAnswer || '').length
+      }
     };
 
-    function renderStudentResults(closed, hasOpen) {
-      container.innerHTML = `
-        <div class="h-full flex items-center justify-center p-4"><div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-lg text-center">
-          <div class="text-5xl sm:text-6xl mb-4">🏆</div><h2 class="text-2xl sm:text-3xl font-bold">Тест завершено!</h2>
-          <p class="mb-4 text-sm sm:text-base">Дякуємо, ${appState.studentName}.</p>
-          <div class="bg-slate-50 p-4 rounded mb-4 text-left">
-            <div class="flex justify-between"><span>Закрита частина:</span><span class="font-bold text-indigo-600">${closed.toFixed(2)} балів</span></div>
-            <div class="flex justify-between"><span>Відкрита частина:</span><span class="${hasOpen?'text-amber-600':'text-red-600'}">${hasOpen?'Очікує перевірки':'Не виконано'}</span></div>
-          </div>
-          <button onclick="logout()" class="w-full py-3 bg-slate-800 text-white rounded">На головну</button>
-        </div></div>`;
+    el.submitBtn.disabled = true;
+    postJSON(payload, (resp) => {
+      el.submitBtn.disabled = false;
+
+      if (!resp.success) {
+        alert(resp.error || 'Не вдалося завершити тест.');
+        return;
+      }
+
+      appState.result = resp;
+      fillResults(resp);
+      clearLocalState();
+      switchScreen('result');
+    });
+  }
+
+  function initAnimationsAndAuto() {
+    setInterval(() => {
+      if (appState.sessionId && el.screenTest.classList.contains('active')) {
+        saveLocalState();
+        autosaveRemote();
+      }
+    }, 15000);
+  }
+
+  async function tryRestoreFlow() {
+    const restored = restoreLocalState();
+    if (!restored) return;
+
+    el.studentName.value = appState.studentName || '';
+    el.className.value = appState.className || '';
+
+    const remote = await restoreRemoteAutosave(appState.sessionId);
+    if (remote) {
+      appState.answers = remote.answers || appState.answers || {};
+      appState.timeLeft = remote.timeLeft || appState.timeLeft;
+      appState.openActionsCount = remote.openActionsCount || appState.openActionsCount;
+      appState.telemetry = remote.telemetry || appState.telemetry;
     }
 
-    // ---------- ПАНЕЛЬ ВЧИТЕЛЯ (JSONP) ----------
-    function renderTeacherDashboard() {
-      const callbackName = 'dashboard_' + Date.now();
-      getJSONP(GAS_URL + '?action=getResults', callbackName, (results) => {
-        if (results.error) {
-          alert('Помилка завантаження результатів: ' + results.error);
-          return;
-        }
-        const total = results.length;
-        const avg = total ? (results.reduce((a, r) => a + (r.openScore ? r.closedScore + r.openScore : r.closedScore), 0) / total).toFixed(2) : 0;
-        
-        let html = `
-          <div class="max-w-7xl mx-auto p-3 sm:p-4 fade-in">
-            <h1 class="text-2xl sm:text-3xl font-bold serif mb-4">Панель вчителя</h1>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div class="bg-white p-4 sm:p-5 rounded-xl shadow"><h3 class="font-bold text-lg">📊 Статистика</h3>
-                <p>Всього робіт: ${total}</p><p>Середній бал: ${avg}</p>
-                <div class="chart-container mt-4"><canvas id="scoreChart"></canvas></div>
-              </div>
-              <div class="lg:col-span-2 bg-white p-4 sm:p-5 rounded-xl shadow">
-                <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
-                  <h3 class="font-bold text-lg">📋 Результати</h3>
-                  <button onclick="exportToCSV()" class="bg-green-600 text-white px-4 py-2 rounded text-sm">📥 CSV</button>
-                </div>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-xs sm:text-sm">
-                    <thead><tr class="bg-slate-100"><th class="p-2">Учень</th><th class="p-2">Варіант</th><th class="p-2">Закр.</th><th class="p-2">Відкр.</th><th class="p-2">Заг.</th><th class="p-2">Дії</th></tr></thead>
-                    <tbody>`;
-        results.forEach((r, idx) => {
-          const totalScore = r.openScore ? r.closedScore + r.openScore : r.closedScore;
-          html += `<tr class="border-b"><td class="p-2">${r.student}</td><td class="p-2 max-w-[120px] truncate">${r.variant}</td>
-            <td class="p-2">${r.closedScore.toFixed(2)}</td><td class="p-2">${r.openScore ?? '❌'}</td><td class="p-2 font-bold">${totalScore.toFixed(2)}</td>
-            <td class="p-2"><button onclick="checkOpen(${r.rowIndex})" class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">Перевірити</button></td></tr>`;
-        });
-        html += `</tbody></table></div></div></div></div>`;
-        container.innerHTML = html;
-        
-        if (total > 0) {
-          const ctx = document.getElementById('scoreChart').getContext('2d');
-          const scores = results.map(r => r.openScore ? r.closedScore + r.openScore : r.closedScore);
-          const bins = [0,2,4,6,8,10,12];
-          const counts = bins.slice(0,-1).map((b,i) => scores.filter(s => s >= b && s < bins[i+1]).length);
-          new Chart(ctx, { type: 'bar', data: { labels: ['0-2','2-4','4-6','6-8','8-10','10-12'], datasets: [{ label: 'Кількість', data: counts }] } });
-        }
-      });
-    }
+    renderTest();
+  }
 
-    window.checkOpen = function(rowIndex) {
-      const callbackName = 'check_' + Date.now();
-      getJSONP(GAS_URL + '?action=getResults', callbackName, (results) => {
-        const rec = results.find(r => r.rowIndex === rowIndex);
-        if (!rec) return;
-        
-        container.innerHTML = `
-          <div class="max-w-4xl mx-auto p-3 sm:p-4">
-            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
-              <h2 class="text-xl font-bold mb-2">${rec.student} — ${rec.variant}</h2>
-              <p class="mb-4">Закрита частина: ${rec.closedScore.toFixed(2)} балів</p>
-              <div class="bg-slate-100 p-3 rounded border mb-4">
-                <p class="font-semibold">Відповідь на відкрите питання:</p>
-                <p class="whitespace-pre-wrap text-sm">${rec.openAnswer || '(відсутня)'}</p>
-              </div>
-              <label class="block mb-2">Оцінка (0–4):</label>
-              <input type="number" id="open-score-input" min="0" max="4" step="0.5" value="${rec.openScore || 0}" class="border p-2 rounded w-24 mb-4">
-              <div class="space-x-3">
-                <button onclick="saveOpenScore(${rowIndex})" class="bg-indigo-600 text-white px-4 py-2 rounded">Зберегти</button>
-                <button onclick="renderTeacherDashboard()" class="bg-slate-500 text-white px-4 py-2 rounded">Назад</button>
-              </div>
-            </div>
-          </div>`;
-      });
-    };
+  el.startBtn.addEventListener('click', startTest);
+  el.submitBtn.addEventListener('click', submitTest);
 
-    window.saveOpenScore = function(rowIndex) {
-      const score = parseFloat(document.getElementById('open-score-input').value);
-      if (isNaN(score) || score < 0 || score > 4) { alert('Введіть число від 0 до 4'); return; }
-      postForm(GAS_URL + '?action=updateScore', { rowIndex, openScore: score }, (data) => {
-        if (data.success) {
-          renderTeacherDashboard();
-        } else {
-          alert('Помилка збереження');
-        }
-      });
-    };
-
-    window.exportToCSV = function() {
-      const callbackName = 'export_' + Date.now();
-      getJSONP(GAS_URL + '?action=getResults', callbackName, (results) => {
-        let csv = "Учень,Варіант,Закрита,Відкрита,Загалом,Час\n";
-        results.forEach(r => {
-          const total = r.openScore ? r.closedScore + r.openScore : r.closedScore;
-          csv += `"${r.student}","${r.variant}",${r.closedScore},${r.openScore ?? ''},${total},"${r.timestamp}"\n`;
-        });
-        const blob = new Blob(["\uFEFF"+csv], {type: 'text/csv;charset=utf-8;'});
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'results.csv';
-        link.click();
-      });
-    };
-
-    // Старт
-    renderLogin();
-  })();
-</script>
-</body>
-</html>
-  })();
+  initTheme();
+  initAnimationsAndAuto();
+  tryRestoreFlow();
+})();
 </script>
 </body>
 </html>
