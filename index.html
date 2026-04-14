@@ -41,14 +41,15 @@
 <script>
   (function(){
     // 🔹🔹🔹 ВСТАВТЕ СЮДИ URL ВАШОГО РОЗГОРНУТОГО GAS ВЕБ-ДОДАТКУ 🔹🔹🔹
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzKI4nfXow-hjUk6MJ9N-ZiQkHzJk2JDxJq_XSAeTqk7TADLNPd5jAMxeggxYef-XnT6w/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6jiOa6fLLzSiInyuZ_P1mB4n8BFSv1db0x4MpRhhBhbUFH-jaqhreme_EOJCmfteu8w/exec';
     
     const TEACHER_PASSWORD = 'whis9dt';
     const COMPLETED_KEY = 'edhistory_completed';
 
     let appState = {
       role: null, studentName: '', sessionId: null, currentVariant: null,
-      timerInterval: null, timeLeft: 0, startTime: null, answers: {}
+      timerInterval: null, timeLeft: 0, startTime: null, answers: {},
+      openActionsCount: 0
     };
 
     const container = document.getElementById('app-container');
@@ -79,7 +80,7 @@
 
     window.logout = function() {
       clearInterval(appState.timerInterval);
-      appState = { role: null, studentName: '', sessionId: null, currentVariant: null, timerInterval: null, timeLeft: 0, startTime: null, answers: {} };
+      appState = { role: null, studentName: '', sessionId: null, currentVariant: null, timerInterval: null, timeLeft: 0, startTime: null, answers: {}, openActionsCount: 0 };
       renderLogin();
     };
 
@@ -111,6 +112,7 @@
         appState.currentVariant = data.variant;
         appState.startTime = data.startTime;
         appState.timeLeft = data.variant.duration;
+        appState.openActionsCount = 0;
         
         renderTest();
         startTimer();
@@ -201,13 +203,21 @@
         }
         html += `</div></div>`;
       });
-      html += `<div class="text-center pt-4 pb-6"><button onclick="submitTest()" class="bg-emerald-600 text-white text-lg sm:text-xl py-3 sm:py-4 px-8 sm:px-12 rounded-xl">Завершити тест</button></div></div>`;
+      html += `<div class="text-center pt-4 pb-6"><button onclick="submitTest()" class="bg-emerald-600 text-white text-lg sm:text-xl py-3 sm:px-12 rounded-xl">Завершити тест</button></div></div>`;
       container.innerHTML = html;
+
+      const openTextarea = document.getElementById('open-answer');
+      if (openTextarea) {
+        const countAction = () => { appState.openActionsCount++; };
+        openTextarea.addEventListener('input', countAction);
+        openTextarea.addEventListener('keydown', countAction);
+        openTextarea.addEventListener('paste', countAction);
+        openTextarea.addEventListener('cut', countAction);
+      }
     }
 
     function startTimer() {
       appState.timerInterval = setInterval(() => {
-        // Синхронізація з серверним часом
         const elapsed = Math.floor((Date.now() - appState.startTime) / 1000);
         appState.timeLeft = Math.max(0, appState.currentVariant.duration - elapsed);
         const disp = document.getElementById('timer-display');
@@ -244,6 +254,7 @@
       clearInterval(appState.timerInterval);
       const answers = collectAnswers();
       const openAnswer = document.getElementById('open-answer')?.value || '';
+      const openActionsCount = appState.openActionsCount;
       
       try {
         const res = await fetch(GAS_URL, {
@@ -253,7 +264,8 @@
             sessionId: appState.sessionId,
             studentName: appState.studentName,
             answers: answers,
-            openAnswer: openAnswer
+            openAnswer: openAnswer,
+            openActionsCount: openActionsCount
           })
         });
         const data = await res.json();
