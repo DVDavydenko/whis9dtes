@@ -274,39 +274,23 @@
 <main class="container">
   <section id="screenWelcome" class="screen active">
     <div class="app-card hero" style="padding:28px;">
-      <div style="position:relative; z-index:1;">
-        <div class="row between center mobile-col">
-          <div>
-            <div class="pill" style="margin-bottom:12px;">🏛️ Всесвітня історія • 9 клас</div>
-            <h1 style="margin:0 0 8px; font-size:clamp(28px,5vw,42px); line-height:1.1;">Сучасне тематичне оцінювання</h1>
-            <p class="muted" style="max-width:680px; line-height:1.7;">
-              Закрита частина перевіряється автоматично. Відкрита частина оцінюється автосистемою за критеріями й може бути уточнена вручну в Google Sheets.
-            </p>
-          </div>
-        </div>
+      <div style="position:relative; z-index:1; max-width:560px;">
+        <div class="pill" style="margin-bottom:12px;">🏛️ Всесвітня історія • 9 клас</div>
 
-        <div class="grid-2" style="margin-top:20px;">
-          <div class="app-card" style="padding:18px;">
-            <div class="small muted" style="margin-bottom:8px;">Початок</div>
-            <label class="small muted">Прізвище та ім’я</label>
-            <input id="studentName" class="input" placeholder="Наприклад: Петренко Іван">
-            <div style="height:10px;"></div>
-            <label class="small muted">Клас</label>
-            <input id="className" class="input" placeholder="Наприклад: 9-А">
-            <div style="height:14px;"></div>
-            <button id="startBtn" class="btn">🚀 Розпочати тест</button>
-          </div>
+        <div class="app-card" style="padding:18px;">
+          <div class="small muted" style="margin-bottom:8px;">Початок</div>
 
-          <div class="app-card" style="padding:18px;">
-            <div class="small muted" style="margin-bottom:10px;">Що враховує система</div>
-            <ul class="muted" style="margin:0; padding-left:18px; line-height:1.9;">
-              <li>автоматичну перевірку закритих завдань</li>
-              <li>автоперевірку відкритої відповіді за критеріями</li>
-              <li>індекс доброчесності</li>
-              <li>автозбереження чернетки</li>
-              <li>відновлення після випадкового перезавантаження</li>
-            </ul>
-          </div>
+          <label class="small muted">Прізвище та ім’я</label>
+          <input id="studentName" class="input" placeholder="Наприклад: Петренко Іван">
+
+          <div style="height:10px;"></div>
+
+          <label class="small muted">Клас</label>
+          <input id="className" class="input" placeholder="Наприклад: 9-А">
+
+          <div style="height:14px;"></div>
+
+          <button id="startBtn" class="btn">🚀 Розпочати тест</button>
         </div>
       </div>
     </div>
@@ -368,7 +352,6 @@
 <script>
 (() => {
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbw3KbMhMiFABGcHG1a9feyBVAz6TZzXqHb4jtr0fga6osinioI3Hi3YoDSuKui7V8XH/exec';
-
   const STORAGE_KEY = 'world_history_9_test_state_v3';
   const THEME_KEY = 'world_history_9_theme';
 
@@ -486,10 +469,7 @@
     try {
       const saved = JSON.parse(raw);
       if (!saved.sessionId || !saved.variant) return false;
-      appState = {
-        ...appState,
-        ...saved
-      };
+      appState = { ...appState, ...saved };
       return true;
     } catch {
       return false;
@@ -542,22 +522,69 @@
     }, 1000);
   }
 
-  function postJSON(payload, callback) {
-    fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(callback)
-    .catch(err => callback({ success: false, error: String(err) }));
+  function getJSONP(url, callbackName, callback) {
+    const script = document.createElement('script');
+    const sep = url.includes('?') ? '&' : '?';
+    const fullUrl = `${url}${sep}callback=${callbackName}&_=${Date.now()}`;
+
+    window[callbackName] = function(data) {
+      try { callback(data); }
+      finally {
+        delete window[callbackName];
+        script.remove();
+      }
+    };
+
+    script.onerror = function() {
+      delete window[callbackName];
+      script.remove();
+      callback({ error: 'Не вдалося отримати відповідь від сервера.' });
+    };
+
+    script.src = fullUrl;
+    document.body.appendChild(script);
+  }
+
+  function postFormJSONP(url, payload, callbackName, callback) {
+    const iframeName = 'hidden_iframe_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    window[callbackName] = function(data) {
+      try { callback(data); }
+      finally {
+        delete window[callbackName];
+        setTimeout(() => iframe.remove(), 300);
+        setTimeout(() => form.remove(), 300);
+      }
+    };
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${url}?callback=${callbackName}`;
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+    form.submit();
   }
 
   function getJSON(url, callback) {
-    fetch(url)
-      .then(r => r.json())
-      .then(callback)
-      .catch(err => callback({ error: String(err) }));
+    const cb = 'cb_get_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    getJSONP(url, cb, callback);
+  }
+
+  function postJSON(payload, callback) {
+    const cb = 'cb_post_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    postFormJSONP(GAS_URL, payload, cb, callback);
   }
 
   function createOptionRadio(name, value, text, checked, onChange) {
@@ -856,14 +883,7 @@
     }, () => {});
   }
 
-  function restoreRemoteAutosave(sessionId) {
-    return fetch(`${GAS_URL}?action=restore&sessionId=${encodeURIComponent(sessionId)}`)
-      .then(r => r.json())
-      .then(resp => resp.autosave || null)
-      .catch(() => null);
-  }
-
-  async function startTest() {
+  function startTest() {
     const studentName = el.studentName.value.trim();
     const className = el.className.value.trim();
 
@@ -958,22 +978,16 @@
     }, 15000);
   }
 
-  async function tryRestoreFlow() {
+  function tryRestoreFlow() {
     const restored = restoreLocalState();
     if (!restored) return;
 
     el.studentName.value = appState.studentName || '';
     el.className.value = appState.className || '';
 
-    const remote = await restoreRemoteAutosave(appState.sessionId);
-    if (remote) {
-      appState.answers = remote.answers || appState.answers || {};
-      appState.timeLeft = remote.timeLeft || appState.timeLeft;
-      appState.openActionsCount = remote.openActionsCount || appState.openActionsCount;
-      appState.telemetry = remote.telemetry || appState.telemetry;
+    if (appState.variant) {
+      renderTest();
     }
-
-    renderTest();
   }
 
   el.startBtn.addEventListener('click', startTest);
