@@ -18,6 +18,7 @@
     @media (max-width: 640px) {
       .grid-cols-1-sm { grid-template-columns: 1fr !important; }
     }
+    #hidden-iframe { display: none; }
   </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800">
@@ -38,11 +39,11 @@
 
 <main class="flex-1 overflow-y-auto relative bg-slate-50" id="app-container"></main>
 
+<iframe id="hidden-iframe" name="hidden-iframe"></iframe>
+
 <script>
   (function(){
-    // 🔹🔹🔹 ВСТАВТЕ СЮДИ URL ВАШОГО РОЗГОРНУТОГО GAS ВЕБ-ДОДАТКУ 🔹🔹🔹
-   const GAS_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://script.google.com/macros/s/AKfycbz6jiOa6fLLzSiInyuZ_P1mB4n8BFSv1db0x4MpRhhBhbUFH-jaqhreme_EOJCmfteu8w/exec');
-    
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6jiOa6fLLzSiInyuZ_P1mB4n8BFSv1db0x4MpRhhBhbUFH-jaqhreme_EOJCmfteu8w/exec';
     const TEACHER_PASSWORD = 'whis9dt';
     const COMPLETED_KEY = 'edhistory_completed';
 
@@ -54,7 +55,56 @@
 
     const container = document.getElementById('app-container');
 
-    // ========== АВТОРИЗАЦІЯ ==========
+    // ---------- БЕЗПЕЧНІ ЗАПИТИ (JSONP + FORM) ----------
+    function getJSONP(url, callbackName, callback) {
+      const script = document.createElement('script');
+      const fullUrl = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+      window[callbackName] = (data) => {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callback(data);
+      };
+      script.src = fullUrl;
+      script.onerror = () => {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callback({ error: 'Network error' });
+      };
+      document.body.appendChild(script);
+    }
+
+    function postForm(url, data, callback) {
+      const iframe = document.getElementById('hidden-iframe');
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      form.target = 'hidden-iframe';
+      form.style.display = 'none';
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'data';
+      input.value = JSON.stringify(data);
+      form.appendChild(input);
+
+      // Додаємо колбек для отримання результату через JSONP після відправки
+      const callbackName = 'cb_' + Date.now();
+      window[callbackName] = (resp) => {
+        delete window[callbackName];
+        callback(resp);
+      };
+      const callbackInput = document.createElement('input');
+      callbackInput.type = 'hidden';
+      callbackInput.name = 'callback';
+      callbackInput.value = callbackName;
+      form.appendChild(callbackInput);
+
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(() => document.body.removeChild(form), 1000);
+    }
+
+    // ---------- АВТОРИЗАЦІЯ ----------
     window.login = function(role) {
       if (role === 'teacher') {
         const pwd = prompt("Введіть пароль вчителя:");
@@ -101,25 +151,23 @@
         </div>`;
     }
 
-    // ========== ТЕСТУВАННЯ ==========
-    async function startTest() {
-      try {
-        const res = await fetch(GAS_URL);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        
+    // ---------- ТЕСТУВАННЯ ----------
+    function startTest() {
+      const callbackName = 'start_' + Date.now();
+      getJSONP(GAS_URL, callbackName, (data) => {
+        if (data.error) {
+          alert('Помилка завантаження тесту: ' + data.error);
+          logout();
+          return;
+        }
         appState.sessionId = data.sessionId;
         appState.currentVariant = data.variant;
         appState.startTime = data.startTime;
         appState.timeLeft = data.variant.duration;
         appState.openActionsCount = 0;
-        
         renderTest();
         startTimer();
-      } catch (e) {
-        alert('Помилка завантаження тесту: ' + e.message);
-        logout();
-      }
+      });
     }
 
     function renderTest() {
@@ -250,66 +298,35 @@
       return answers;
     }
 
-window.submitTest = async function() {
-  clearInterval(appState.timerInterval);
-  const answers = collectAnswers();
-  const openAnswer = document.getElementById('open-answer')?.value || '';
-  const openActionsCount = appState.openActionsCount;
-  
-  try {
-    console.log('📤 Відправка результатів...', { 
-      sessionId: appState.sessionId, 
-      studentName: appState.studentName,
-      answersCount: Object.keys(answers).length,
-      openAnswerLength: openAnswer.length,
-      openActionsCount 
-    });
-
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    window.submitTest = function() {
+      clearInterval(appState.timerInterval);
+      const answers = collectAnswers();
+      const openAnswer = document.getElementById('open-answer')?.value || '';
+      const openActionsCount = appState.openActionsCount;
+      
+      const postData = {
         sessionId: appState.sessionId,
         studentName: appState.studentName,
         answers: answers,
         openAnswer: openAnswer,
         openActionsCount: openActionsCount
-      })
-    });
-    
-    console.log('📡 Статус відповіді:', res.status, res.statusText);
-    
-    // Перевіряємо, чи сервер повернув JSON
-    const contentType = res.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await res.text();
-      console.error('❌ Сервер повернув не JSON:', text);
-      throw new Error('Сервер повернув некоректну відповідь. Перевірте налаштування GAS.');
-    }
-    
-    const data = await res.json();
-    console.log('✅ Відповідь сервера:', data);
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Невідома помилка сервера');
-    }
-    
-    // Позначаємо, що учень завершив тест
-    const completed = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]');
-    if (!completed.includes(appState.studentName)) {
-      completed.push(appState.studentName);
-      localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
-    }
-    
-    // Показуємо результати
-    renderStudentResults(data.closedScore, !!openAnswer);
-    
-  } catch (e) {
-    console.error('🔥 Помилка при відправці:', e);
-    alert('Помилка: ' + e.message + '\n\nДеталі в консолі (F12).');
-    // НЕ викликаємо logout(), щоб залишитися на сторінці та побачити помилку
-  }
-};
+      };
+
+      postForm(GAS_URL, postData, (data) => {
+        if (!data.success) {
+          alert('Помилка: ' + (data.error || 'Невідома помилка'));
+          return;
+        }
+        
+        const completed = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]');
+        if (!completed.includes(appState.studentName)) {
+          completed.push(appState.studentName);
+          localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
+        }
+        
+        renderStudentResults(data.closedScore, !!openAnswer);
+      });
+    };
 
     function renderStudentResults(closed, hasOpen) {
       container.innerHTML = `
@@ -324,11 +341,14 @@ window.submitTest = async function() {
         </div></div>`;
     }
 
-    // ========== ПАНЕЛЬ ВЧИТЕЛЯ ==========
-    async function renderTeacherDashboard() {
-      try {
-        const res = await fetch(GAS_URL + '?action=getResults');
-        const results = await res.json();
+    // ---------- ПАНЕЛЬ ВЧИТЕЛЯ (JSONP) ----------
+    function renderTeacherDashboard() {
+      const callbackName = 'dashboard_' + Date.now();
+      getJSONP(GAS_URL + '?action=getResults', callbackName, (results) => {
+        if (results.error) {
+          alert('Помилка завантаження результатів: ' + results.error);
+          return;
+        }
         const total = results.length;
         const avg = total ? (results.reduce((a, r) => a + (r.openScore ? r.closedScore + r.openScore : r.closedScore), 0) / total).toFixed(2) : 0;
         
@@ -365,62 +385,69 @@ window.submitTest = async function() {
           const counts = bins.slice(0,-1).map((b,i) => scores.filter(s => s >= b && s < bins[i+1]).length);
           new Chart(ctx, { type: 'bar', data: { labels: ['0-2','2-4','4-6','6-8','8-10','10-12'], datasets: [{ label: 'Кількість', data: counts }] } });
         }
-      } catch (e) { alert('Помилка завантаження результатів'); }
+      });
     }
 
-    window.checkOpen = async function(rowIndex) {
-      const res = await fetch(GAS_URL + '?action=getResults');
-      const results = await res.json();
-      const rec = results.find(r => r.rowIndex === rowIndex);
-      if (!rec) return;
-      
-      container.innerHTML = `
-        <div class="max-w-4xl mx-auto p-3 sm:p-4">
-          <div class="bg-white rounded-xl shadow p-4 sm:p-6">
-            <h2 class="text-xl font-bold mb-2">${rec.student} — ${rec.variant}</h2>
-            <p class="mb-4">Закрита частина: ${rec.closedScore.toFixed(2)} балів</p>
-            <div class="bg-slate-100 p-3 rounded border mb-4">
-              <p class="font-semibold">Відповідь на відкрите питання:</p>
-              <p class="whitespace-pre-wrap text-sm">${rec.openAnswer || '(відсутня)'}</p>
+    window.checkOpen = function(rowIndex) {
+      const callbackName = 'check_' + Date.now();
+      getJSONP(GAS_URL + '?action=getResults', callbackName, (results) => {
+        const rec = results.find(r => r.rowIndex === rowIndex);
+        if (!rec) return;
+        
+        container.innerHTML = `
+          <div class="max-w-4xl mx-auto p-3 sm:p-4">
+            <div class="bg-white rounded-xl shadow p-4 sm:p-6">
+              <h2 class="text-xl font-bold mb-2">${rec.student} — ${rec.variant}</h2>
+              <p class="mb-4">Закрита частина: ${rec.closedScore.toFixed(2)} балів</p>
+              <div class="bg-slate-100 p-3 rounded border mb-4">
+                <p class="font-semibold">Відповідь на відкрите питання:</p>
+                <p class="whitespace-pre-wrap text-sm">${rec.openAnswer || '(відсутня)'}</p>
+              </div>
+              <label class="block mb-2">Оцінка (0–4):</label>
+              <input type="number" id="open-score-input" min="0" max="4" step="0.5" value="${rec.openScore || 0}" class="border p-2 rounded w-24 mb-4">
+              <div class="space-x-3">
+                <button onclick="saveOpenScore(${rowIndex})" class="bg-indigo-600 text-white px-4 py-2 rounded">Зберегти</button>
+                <button onclick="renderTeacherDashboard()" class="bg-slate-500 text-white px-4 py-2 rounded">Назад</button>
+              </div>
             </div>
-            <label class="block mb-2">Оцінка (0–4):</label>
-            <input type="number" id="open-score-input" min="0" max="4" step="0.5" value="${rec.openScore || 0}" class="border p-2 rounded w-24 mb-4">
-            <div class="space-x-3">
-              <button onclick="saveOpenScore(${rowIndex})" class="bg-indigo-600 text-white px-4 py-2 rounded">Зберегти</button>
-              <button onclick="renderTeacherDashboard()" class="bg-slate-500 text-white px-4 py-2 rounded">Назад</button>
-            </div>
-          </div>
-        </div>`;
+          </div>`;
+      });
     };
 
-    window.saveOpenScore = async function(rowIndex) {
+    window.saveOpenScore = function(rowIndex) {
       const score = parseFloat(document.getElementById('open-score-input').value);
       if (isNaN(score) || score < 0 || score > 4) { alert('Введіть число від 0 до 4'); return; }
-      await fetch(GAS_URL + '?action=updateScore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rowIndex, openScore: score })
+      postForm(GAS_URL + '?action=updateScore', { rowIndex, openScore: score }, (data) => {
+        if (data.success) {
+          renderTeacherDashboard();
+        } else {
+          alert('Помилка збереження');
+        }
       });
-      renderTeacherDashboard();
     };
 
-    window.exportToCSV = async function() {
-      const res = await fetch(GAS_URL + '?action=getResults');
-      const results = await res.json();
-      let csv = "Учень,Варіант,Закрита,Відкрита,Загалом,Час\n";
-      results.forEach(r => {
-        const total = r.openScore ? r.closedScore + r.openScore : r.closedScore;
-        csv += `"${r.student}","${r.variant}",${r.closedScore},${r.openScore ?? ''},${total},"${r.timestamp}"\n`;
+    window.exportToCSV = function() {
+      const callbackName = 'export_' + Date.now();
+      getJSONP(GAS_URL + '?action=getResults', callbackName, (results) => {
+        let csv = "Учень,Варіант,Закрита,Відкрита,Загалом,Час\n";
+        results.forEach(r => {
+          const total = r.openScore ? r.closedScore + r.openScore : r.closedScore;
+          csv += `"${r.student}","${r.variant}",${r.closedScore},${r.openScore ?? ''},${total},"${r.timestamp}"\n`;
+        });
+        const blob = new Blob(["\uFEFF"+csv], {type: 'text/csv;charset=utf-8;'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'results.csv';
+        link.click();
       });
-      const blob = new Blob(["\uFEFF"+csv], {type: 'text/csv;charset=utf-8;'});
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'results.csv';
-      link.click();
     };
 
     // Старт
     renderLogin();
+  })();
+</script>
+</body>
+</html>
   })();
 </script>
 </body>
