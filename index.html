@@ -250,39 +250,66 @@
       return answers;
     }
 
-    window.submitTest = async function() {
-      clearInterval(appState.timerInterval);
-      const answers = collectAnswers();
-      const openAnswer = document.getElementById('open-answer')?.value || '';
-      const openActionsCount = appState.openActionsCount;
-      
-      try {
-        const res = await fetch(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId: appState.sessionId,
-            studentName: appState.studentName,
-            answers: answers,
-            openAnswer: openAnswer,
-            openActionsCount: openActionsCount
-          })
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error);
-        
-        const completed = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]');
-        if (!completed.includes(appState.studentName)) {
-          completed.push(appState.studentName);
-          localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
-        }
-        
-        renderStudentResults(data.closedScore, !!openAnswer);
-      } catch (e) {
-        alert('Помилка: ' + e.message);
-        logout();
-      }
-    };
+window.submitTest = async function() {
+  clearInterval(appState.timerInterval);
+  const answers = collectAnswers();
+  const openAnswer = document.getElementById('open-answer')?.value || '';
+  const openActionsCount = appState.openActionsCount;
+  
+  try {
+    console.log('📤 Відправка результатів...', { 
+      sessionId: appState.sessionId, 
+      studentName: appState.studentName,
+      answersCount: Object.keys(answers).length,
+      openAnswerLength: openAnswer.length,
+      openActionsCount 
+    });
+
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: appState.sessionId,
+        studentName: appState.studentName,
+        answers: answers,
+        openAnswer: openAnswer,
+        openActionsCount: openActionsCount
+      })
+    });
+    
+    console.log('📡 Статус відповіді:', res.status, res.statusText);
+    
+    // Перевіряємо, чи сервер повернув JSON
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await res.text();
+      console.error('❌ Сервер повернув не JSON:', text);
+      throw new Error('Сервер повернув некоректну відповідь. Перевірте налаштування GAS.');
+    }
+    
+    const data = await res.json();
+    console.log('✅ Відповідь сервера:', data);
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Невідома помилка сервера');
+    }
+    
+    // Позначаємо, що учень завершив тест
+    const completed = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]');
+    if (!completed.includes(appState.studentName)) {
+      completed.push(appState.studentName);
+      localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
+    }
+    
+    // Показуємо результати
+    renderStudentResults(data.closedScore, !!openAnswer);
+    
+  } catch (e) {
+    console.error('🔥 Помилка при відправці:', e);
+    alert('Помилка: ' + e.message + '\n\nДеталі в консолі (F12).');
+    // НЕ викликаємо logout(), щоб залишитися на сторінці та побачити помилку
+  }
+};
 
     function renderStudentResults(closed, hasOpen) {
       container.innerHTML = `
