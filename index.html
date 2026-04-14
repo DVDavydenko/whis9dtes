@@ -79,6 +79,13 @@
     pointer-events: none;
   }
 
+  .hero-center {
+    min-height: 72vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .topbar {
     position: sticky;
     top: 0;
@@ -261,7 +268,7 @@
   <div class="container row between center wrap">
     <div class="row center wrap">
       <div class="pill">📚 <strong>Тематична Вс.Іст.9кл</strong></div>
-      <div id="timerBox" class="pill hidden">⏳ <span id="timer">40:00</span></div>
+      <div id="timerBox" class="pill hidden">⏳ <span id="timer">25:00</span></div>
       <div id="riskBadge" class="badge low hidden">ризик: low</div>
     </div>
     <div class="row center wrap">
@@ -273,24 +280,24 @@
 
 <main class="container">
   <section id="screenWelcome" class="screen active">
-    <div class="app-card hero" style="padding:28px;">
-      <div style="position:relative; z-index:1; max-width:560px;">
-        <div class="pill" style="margin-bottom:12px;">🏛️ Всесвітня історія • 9 клас</div>
+    <div class="app-card hero hero-center" style="padding:48px 28px;">
+      <div style="position:relative; z-index:1; width:min(100%, 560px);">
+        <div class="pill" style="margin:0 auto 16px; display:flex; width:max-content;">🏛️ Всесвітня історія • 9 клас</div>
 
-        <div class="app-card" style="padding:18px;">
-          <div class="small muted" style="margin-bottom:8px;">Початок</div>
+        <div class="app-card" style="padding:24px;">
+          <div class="small muted" style="margin-bottom:12px; text-align:center;">Початок</div>
 
           <label class="small muted">Прізвище та ім’я</label>
           <input id="studentName" class="input" placeholder="Наприклад: Петренко Іван">
 
-          <div style="height:10px;"></div>
+          <div style="height:12px;"></div>
 
           <label class="small muted">Клас</label>
           <input id="className" class="input" placeholder="Наприклад: 9-А">
 
-          <div style="height:14px;"></div>
+          <div style="height:18px;"></div>
 
-          <button id="startBtn" class="btn">🚀 Розпочати тест</button>
+          <button id="startBtn" class="btn" style="width:100%;">🚀 Розпочати тест</button>
         </div>
       </div>
     </div>
@@ -314,12 +321,15 @@
   </section>
 
   <section id="screenResult" class="screen">
-    <div class="app-card section-card">
+    <div class="app-card section-card" style="padding:28px;">
       <div class="row between center mobile-col">
         <div>
-          <div class="pill" style="margin-bottom:10px;">🏁 Результат зафіксовано</div>
-          <h2 style="margin:0 0 6px; font-size:32px;">Роботу надіслано</h2>
-          <div class="muted">Дані збережено в Google Sheets, а короткий звіт надіслано в Telegram.</div>
+          <div class="pill" style="margin-bottom:10px;">🎉 Роботу успішно надіслано</div>
+          <h2 style="margin:0 0 8px; font-size:32px;">Дякуємо за виконання тесту!</h2>
+          <div class="muted" style="max-width:700px; line-height:1.7;">
+            Ваші відповіді збережено. Очікуйте результат у журналі після перевірки.
+            Бажаємо гарного дня та успіхів у навчанні!
+          </div>
         </div>
       </div>
 
@@ -351,7 +361,7 @@
 
 <script>
 (() => {
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbw3KbMhMiFABGcHG1a9feyBVAz6TZzXqHb4jtr0fga6osinioI3Hi3YoDSuKui7V8XH/exec';
+  const GAS_URL = 'YOUR_GAS_URL';
   const STORAGE_KEY = 'world_history_9_test_state_v3';
   const THEME_KEY = 'world_history_9_theme';
 
@@ -364,7 +374,7 @@
     answers: {},
     openActionsCount: 0,
     timerInterval: null,
-    timeLeft: 2400,
+    timeLeft: 1500,
     telemetry: {
       pasteCount: 0,
       blurCount: 0,
@@ -654,7 +664,7 @@
     el.variantTitle.textContent = appState.variant.title;
     el.questionsContainer.innerHTML = '';
 
-    appState.variant.sections.forEach((sec, secIndex) => {
+    appState.variant.sections.forEach((sec) => {
       const card = document.createElement('div');
       card.className = 'app-card section-card';
       card.innerHTML = `
@@ -910,7 +920,7 @@
       appState.studentName = studentName;
       appState.className = className;
       appState.startTime = data.startTime;
-      appState.timeLeft = data.variant.duration || 2400;
+      appState.timeLeft = data.variant.duration || 1500;
       appState.answers = {};
       appState.openActionsCount = 0;
       appState.telemetry = {
