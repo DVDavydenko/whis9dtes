@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>EdHistory: комплексне оцінювання (Розділ 3)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,8 +13,15 @@
     .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 200px; }
     .fade-in { animation: fadeIn 0.4s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .radio-custom:checked + label { background: #e0e7ff; border-color: #4f46e5; color: #3730a3; font-weight: 600; }
+    .radio-custom:checked + label, .checkbox-custom:checked + label { background: #e0e7ff; border-color: #4f46e5; color: #3730a3; font-weight: 600; }
     .sticky-timer { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(8px); }
+    /* Мобільна адаптація */
+    @media (max-width: 640px) {
+      .grid-cols-1-sm { grid-template-columns: 1fr !important; }
+      .p-mob { padding: 0.75rem !important; }
+      .text-mob { font-size: 0.9rem !important; }
+      .btn-mob { padding: 0.75rem 1rem !important; }
+    }
   </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-800">
@@ -24,11 +31,11 @@
     <div class="flex items-center space-x-2">
       <span class="text-2xl">🏛️</span>
       <span class="text-xl font-bold serif">EdHistory</span>
-      <span class="text-xs bg-indigo-700 px-2 py-1 rounded ml-2 hidden sm:inline-block">PRO: випадкові варіанти</span>
+      <span class="text-xs bg-indigo-700 px-2 py-1 rounded ml-2 hidden sm:inline-block">PRO: розширені типи</span>
     </div>
     <div id="user-info" class="hidden text-sm font-medium flex items-center">
       <span id="role-badge" class="bg-indigo-600 px-3 py-1 rounded-full mr-4"></span>
-      <button onclick="logout()" class="text-indigo-300 hover:text-white">🚪 Вийти</button>
+      <button onclick="logout()" class="text-indigo-300 hover:text-white text-sm px-2 py-1">🚪 Вийти</button>
     </div>
   </div>
 </header>
@@ -37,38 +44,33 @@
 
 <script>
   (function(){
-    // ---------- БАНК ЗАВДАНЬ (усі 5 варіантів) ----------
-    // 1. MCQ (рівень 1) – 30 питань (6*5)
+    // ---------- БАНК ЗАВДАНЬ (розширений) ----------
+    // 1. MCQ (6 питань) – залишаємо як є
     const mcqBank = [
-      // Варіант 1
       {id:"v1_m1", q:"Яка держава створила Троїстий союз?", options:["Франція","Британія","Німеччина"], correct:2},
       {id:"v1_m2", q:"Справа Дрейфуса була у:", options:["Австро-Угорщині","Франції","Італії"], correct:1},
       {id:"v1_m3", q:"«Блискуча ізоляція» характерна для:", options:["Бісмарка","Британії","Лінкольна"], correct:1},
       {id:"v1_m4", q:"Що прискорило індустріалізацію Німеччини?", options:["Об'єднання 1871","Революція 1848","Франко-прусська війна"], correct:2},
       {id:"v1_m5", q:"«Залізний канцлер»:", options:["Вільгельм II","Бісмарк","Фрідріх Вільгельм IV"], correct:1},
       {id:"v1_m6", q:"Політика розширення колоній:", options:["Імперіалізм","Меркантилізм","Ізоляціонізм"], correct:0},
-      // Варіант 2
       {id:"v2_m1", q:"Який закон США 1890 р. боровся з монополіями?", options:["Акт про гомстеди","Закон Шермана","Білль про права"], correct:1},
       {id:"v2_m2", q:"Що прискорило індустріалізацію США?", options:["Війна за незалежність","Перемога Півночі у Громадянській війні","Купівля Аляски"], correct:1},
       {id:"v2_m3", q:"Основа зростання Російської імперії наприкінці XIX ст.", options:["Фермерство","Держфінансування та іноземний капітал","Відсутність мит"], correct:1},
       {id:"v2_m4", q:"Хто провів реформи в Росії 1860-70-х?", options:["Олександр I","Олександр II","Микола II"], correct:1},
       {id:"v2_m5", q:"Яка залізниця будувалася в Росії у 1891–1916?", options:["Транссибірська","Московсько-Київська","Петербурзько-Варшавська"], correct:0},
       {id:"v2_m6", q:"Хто з президентів США проводив «чесний курс»?", options:["В. Вільсон","Т. Рузвельт","В. Мак-Кінлі"], correct:1},
-      // Варіант 3
       {id:"v3_m1", q:"Відправна точка модернізації Японії?", options:["Повстання тайпінів","Реставрація Мейдзі","Опіумні війни"], correct:1},
       {id:"v3_m2", q:"Японські родинні корпорації називалися:", options:["Дзайбацу","Синдикати","Трести"], correct:0},
       {id:"v3_m3", q:"Конституція 1889 р. закріпила в Японії:", options:["Абсолютну монархію","Республіку","Конституційну монархію з сильним імператором"], correct:2},
       {id:"v3_m4", q:"З ким Японія воювала у 1904–1905 рр.?", options:["Китай","Російська імперія","Корея"], correct:1},
       {id:"v3_m5", q:"Яку країну Японія анексувала у 1910 р.?", options:["Тайвань","Корею","Маньчжурію"], correct:1},
       {id:"v3_m6", q:"Хто був імператором у період Мейдзі?", options:["Муцухіто","Хірохіто","Акіхіто"], correct:0},
-      // Варіант 4
       {id:"v4_m1", q:"Повстання тайпінів у Китаї відбувалося:", options:["1850–1864","1899–1901","1911–1912"], correct:0},
       {id:"v4_m2", q:"Політика «самопосилення» в Китаї передбачала:", options:["Запозичення західних технологій","Повну ізоляцію","Соціалістичні реформи"], correct:0},
       {id:"v4_m3", q:"Індійський національний конгрес засновано у:", options:["1857","1885","1905"], correct:1},
       {id:"v4_m4", q:"Повстання сипаїв відбулося у:", options:["1857–1859","1870","1900"], correct:0},
       {id:"v4_m5", q:"Хто очолював рух «Свадеші»?", options:["Махатма Ганді","Бал Гангадхар Тілак","Джавахарлал Неру"], correct:1},
       {id:"v4_m6", q:"Боксерське повстання спрямовувалося проти:", options:["Іноземного впливу","Династії Цін","Японії"], correct:0},
-      // Варіант 5
       {id:"v5_m1", q:"Союз трьох імператорів об'єднував:", options:["Німеччину, Австро-Угорщину, Росію","Німеччину, Італію, Японію","Британію, Францію, Росію"], correct:0},
       {id:"v5_m2", q:"Антанта сформувалася у:", options:["1882","1907","1914"], correct:1},
       {id:"v5_m3", q:"Берлінський конгрес відбувся у:", options:["1878","1885","1890"], correct:0},
@@ -77,28 +79,38 @@
       {id:"v5_m6", q:"Яка криза ледь не призвела до війни у 1911?", options:["Боснійська","Марокканська","Балканська"], correct:1}
     ];
 
-    // 2. Matching (рівень 2) – блоки по 4 пари
-    const matchingBank = [
-      // Варіант 1
-      {id:"match1", q:"Термін — визначення", items:["Монополія","Індустріалізація","Імперіалізм","Суфражизм"],
-       options:["Рух жінок","Панування на ринку","Машинна індустрія","Переділ світу"], correct:[1,2,3,0]},
-      // Варіант 2 (два блоки)
-      {id:"match2a", q:"Співвіднесіть діяча та країну", items:["С.Ю. Вітте","Т. Рузвельт","О. фон Бісмарк","А. Лінкольн"],
-       options:["Російська імперія","США","Німеччина","Велика Британія"], correct:[0,1,2,1]},
-      {id:"match2b", q:"Термін — визначення", items:["Трест","Синдикат","Картель","Концерн"],
-       options:["Об'єднання з втратою комерційної самостійності","Угода про ціни при збереженні виробничої незалежності","Повне злиття підприємств","Об'єднання різних галузей під контролем банку"], correct:[2,0,1,3]},
-      // Варіант 3
-      {id:"match3", q:"Реформа — зміст", items:["Адміністративна","Військова","Аграрна","Освітня"],
-       options:["Введення загальної військової повинності","Ліквідація князівств, створення префектур","Дозвіл купівлі-продажу землі","Запровадження обов'язкової початкової освіти"], correct:[1,0,2,3]},
-      // Варіант 4
-      {id:"match4", q:"Країна — подія", items:["Китай","Індія","Японія"], options:["Повстання сипаїв","Боксерське повстання","Реставрація Мейдзі"], correct:[1,0,2]}, // тут 3 пари, але для одноманітності доповнимо? Залишимо як є, але це 0.75 бала. Можна додати четверту. Я додам "Корея — анексія 1910" для повноти.
-      {id:"match4fixed", q:"Країна — подія", items:["Китай","Індія","Японія","Корея"], options:["Повстання сипаїв","Боксерське повстання","Реставрація Мейдзі","Анексія Японією 1910"], correct:[1,0,2,3]},
-      // Варіант 5
-      {id:"match5", q:"Союз — учасники", items:["Троїстий","Антанта","Союз трьох імператорів"], options:["Німеччина, Австро-Угорщина, Італія","Франція, Росія, Британія","Німеччина, Австро-Угорщина, Росія"], correct:[0,1,2]}, // 3 пари
-      {id:"match5fixed", q:"Союз — учасники", items:["Троїстий","Антанта","Союз трьох імператорів","Рейхсбанк"], options:["Німеччина, Австро-Угорщина, Італія","Франція, Росія, Британія","Німеччина, Австро-Угорщина, Росія","Центральний банк Німеччини"], correct:[0,1,2,3]}
+    // 2. Matching (стандартний) та нові типи: checkbox, blanks, dragdrop, shorttext
+    const sectionBank = [
+      // --- Matching (4 пари) ---
+      { type: "matching", title: "Відповідність (терміни)", desc: "0.25 бала за пару",
+        data: { id:"match1", q:"Термін — визначення", items:["Монополія","Індустріалізація","Імперіалізм","Суфражизм"],
+        options:["Рух жінок","Панування на ринку","Машинна індустрія","Переділ світу"], correct:[1,2,3,0] } },
+      { type: "matching", title: "Відповідність (діячі)", desc: "0.25 бала за пару",
+        data: { id:"match2a", q:"Співвіднесіть діяча та країну", items:["С.Ю. Вітте","Т. Рузвельт","О. фон Бісмарк","А. Лінкольн"],
+        options:["Російська імперія","США","Німеччина","Велика Британія"], correct:[0,1,2,1] } },
+      // --- Checkbox (множинний вибір) ---
+      { type: "checkbox", title: "Множинний вибір", desc: "0.5 бала за всі правильні (по 0.25 за кожну)",
+        data: { id:"cb1", q:"Які країни входили до Антанти у 1907 р.? (виберіть 2)",
+          options: ["Франція", "Німеччина", "Росія", "Австро-Угорщина"],
+          correct: [0, 2] } },  // правильні індекси
+      // --- Blanks (заповнення пропусків) ---
+      { type: "blanks", title: "Заповнення пропусків", desc: "0.5 бала за правильний вибір",
+        data: { id:"bl1", textBefore: "У ", textAfter: " році відбулася Франко-прусська війна, внаслідок якої була проголошена Німецька імперія.",
+          blanks: [{ pos:0, options: ["1870", "1871", "1866"], correct: 0 }] } },
+      // --- Drag-drop (велика відповідність) ---
+      { type: "dragdrop", title: "Відповідність (події)", desc: "0.25 за пару (4 пари)",
+        data: { id:"dd1", q:"Встановіть відповідність між подією та роком",
+          items: ["Франко-прусська війна", "Берлінський конгрес", "Утворення Троїстого союзу", "Початок Першої світової"],
+          options: ["1870–1871", "1878", "1882", "1914"],
+          correct: [0,1,2,3] } },
+      // --- Shorttext (ключові слова) ---
+      { type: "shorttext", title: "Коротка відповідь", desc: "до 1 бала (автоперевірка)",
+        data: { id:"st1", q:"Назвіть два основні чинники швидкої індустріалізації Німеччини наприкінці XIX ст.",
+          keywords: ["об'єднання", "контрибуція", "залізниця", "мілітаризація", "наука"],
+          maxScore: 1.0 } }
     ];
 
-    // 3. Sequence (рівень 3) – 5 блоків
+    // 3. Sequence (хронологія)
     const sequenceBank = [
       {id:"seq1", items:[{id:"s1",text:"Проголошення Німецької імперії"},{id:"s2",text:"Початок ПСВ"},{id:"s3",text:"Троїстий союз"},{id:"s4",text:"Франко-прусська війна"}], correctOrder:["s4","s1","s3","s2"]},
       {id:"seq2", items:[{id:"s1",text:"Скасування кріпацтва в Росії"},{id:"s2",text:"Громадянська війна в США"},{id:"s3",text:"Будівництво Транссибу"},{id:"s4",text:"Прийняття закону Шермана"}], correctOrder:["s1","s2","s4","s3"]},
@@ -107,7 +119,7 @@
       {id:"seq5", items:[{id:"s1",text:"Франко-прусська війна"},{id:"s2",text:"Утворення Троїстого союзу"},{id:"s3",text:"Утворення Антанти"},{id:"s4",text:"Початок Першої світової"}], correctOrder:["s1","s2","s3","s4"]}
     ];
 
-    // 4. Source (рівень 4) – 5 блоків
+    // 4. Source (джерело)
     const sourceBank = [
       {id:"src1", quote:"«Великі питання часу вирішуються не промовами... а залізом і кров'ю!»", author:"— Отто фон Бісмарк",
        questions:[{id:"src1_q1", q:"Шлях модернізації?", options:["Мілітаристський","Демократичний","Революційний"], correct:0},
@@ -126,59 +138,77 @@
                   {id:"src5_q2", q:"Що зруйнувало цю систему?", options:["Відставка Бісмарка","Балканські війни","Марокканська криза"], correct:0}]}
     ];
 
-    // 5. Open (рівень 5) – 5 питань
+    // 5. Open (відкрите)
     const openBank = [
       {id:"open1", q:"Порівняйте розвиток Німеччини та Британії в останній третині XIX ст. Чому Німеччина випередила?",
        rubric:{4:"Глибокий аналіз, технології, контрибуція",3:"Добра аргументація",2:"Базове розуміння",1:"Фрагментарно"}},
-      {id:"open2", q:"Чому розвиток Російської імперії називають «наздоганяючою» модернізацією? У чому полягав конфлікт між економікою та політикою?",
-       rubric:{4:"Пояснено пізнє скасування кріпацтва, роль держави та іноземного капіталу, суперечність між капіталізмом та самодержавством",3:"Вказано на швидке будівництво залізниць за рахунок іноземців, згадано конфлікт",2:"Базове розуміння пізнього старту модернізації",1:"Фрагментарні знання"}},
-      {id:"open3", q:"Які чинники дозволили Японії уникнути долі Китаю та стати імперіалістичною державою?",
-       rubric:{4:"Глибокий аналіз реформ, роль держави, мілітаризація",3:"Добра аргументація",2:"Базові тези",1:"Фрагменти"}},
-      {id:"open4", q:"Порівняйте реакцію Китаю та Японії на західний тиск у ХІХ ст. Чому результати виявилися різними?",
-       rubric:{4:"Глибоке порівняння, внутрішні чинники",3:"Основні відмінності",2:"Базові тези",1:"Фрагменти"}},
-      {id:"open5", q:"Чому система союзів, створена Бісмарком, не змогла запобігти світовій війні?",
-       rubric:{4:"Аналіз змін після 1890, роль Вільгельма II",3:"Основні причини",2:"Поверхнево",1:"Слабко"}}
+      {id:"open2", q:"Чому розвиток Російської імперії називають «наздоганяючою» модернізацією? У чому полягав конфлікт між економікою та політикою?"},
+      {id:"open3", q:"Які чинники дозволили Японії уникнути долі Китаю та стати імперіалістичною державою?"},
+      {id:"open4", q:"Порівняйте реакцію Китаю та Японії на західний тиск у ХІХ ст."},
+      {id:"open5", q:"Чому система союзів, створена Бісмарком, не змогла запобігти світовій війні?"}
     ];
 
     // ---------- ГЕНЕРАЦІЯ ВИПАДКОВОГО ВАРІАНТУ ----------
     function generateRandomVariant() {
-      // Випадковий вибір без повторень (де потрібно)
-      const shuffledMCQ = [...mcqBank].sort(() => Math.random() - 0.5);
-      const selectedMCQ = shuffledMCQ.slice(0, 6);
+      const selectedMCQ = [...mcqBank].sort(()=>Math.random()-0.5).slice(0,6);
+      
+      // Вибираємо 2 секції з банку (рівень 2), переважно matching/checkbox/blanks/dragdrop
+      const shuffledSections = [...sectionBank].sort(()=>Math.random()-0.5);
+      const selectedSections = shuffledSections.slice(0, 2);
+      
+      // Sequence
+      const selectedSeq = sequenceBank[Math.floor(Math.random()*sequenceBank.length)];
+      // Source
+      const selectedSrc = sourceBank[Math.floor(Math.random()*sourceBank.length)];
+      // Open
+      const selectedOpen = openBank[Math.floor(Math.random()*openBank.length)];
 
-      // Matching: вибираємо 2 блоки (або 1, якщо банк малий, але в нас 7 блоків)
-      const shuffledMatch = [...matchingBank].sort(() => Math.random() - 0.5);
-      const selectedMatch = shuffledMatch.slice(0, 2); // завжди 2 блоки = 8 пар = 2 бали
-
-      // Sequence: 1 блок
-      const selectedSeq = sequenceBank[Math.floor(Math.random() * sequenceBank.length)];
-
-      // Source: 1 блок
-      const selectedSrc = sourceBank[Math.floor(Math.random() * sourceBank.length)];
-
-      // Open: 1 питання
-      const selectedOpen = openBank[Math.floor(Math.random() * openBank.length)];
+      // Формуємо секції варіанту
+      const sections = [
+        { type: "mcq", title: "Рівень 1 (3 бали)", desc: "6 питань по 0.5 бала", questions: selectedMCQ }
+      ];
+      
+      // Додаємо вибрані секції рівня 2
+      selectedSections.forEach((sec, idx) => {
+        sections.push({
+          type: sec.type,
+          title: sec.title,
+          desc: sec.desc,
+          data: sec.data
+        });
+      });
+      
+      // Sequence
+      sections.push({
+        type: "sequence", title: "Рівень 3 (1 бал)", desc: "Хронологічна послідовність",
+        id: selectedSeq.id, items: selectedSeq.items, correctOrder: selectedSeq.correctOrder
+      });
+      // Source
+      sections.push({
+        type: "source", title: "Рівень 4 (2 бали)", desc: "Аналіз джерела",
+        quote: selectedSrc.quote, author: selectedSrc.author, questions: selectedSrc.questions
+      });
+      // Open
+      sections.push({
+        type: "open", title: "Рівень 5 (4 бали)", desc: "Відкрите питання",
+        q: selectedOpen.q, rubric: selectedOpen.rubric || {}
+      });
 
       return {
         title: `Варіант (${new Date().toLocaleTimeString()})`,
         duration: 2400,
-        sections: [
-          { type: "mcq", title: "Рівень 1 (3 бали)", desc: "6 питань по 0.5 бала", questions: selectedMCQ },
-          { type: "matching", title: "Рівень 2 (2 бали)", desc: "2 блоки по 4 відповідності (0.25 за пару)", questions: selectedMatch },
-          { type: "sequence", title: "Рівень 3 (1 бал)", desc: "Хронологічна послідовність", id: selectedSeq.id, items: selectedSeq.items, correctOrder: selectedSeq.correctOrder },
-          { type: "source", title: "Рівень 4 (2 бали)", desc: "Аналіз джерела", quote: selectedSrc.quote, author: selectedSrc.author, questions: selectedSrc.questions },
-          { type: "open", title: "Рівень 5 (4 бали)", desc: "Відкрите питання", q: selectedOpen.q, rubric: selectedOpen.rubric }
-        ]
+        sections: sections
       };
     }
 
     // ---------- СТАН ----------
     let appState = {
       role: null, studentName: '', currentVariant: null, timerInterval: null, timeLeft: 0,
-      answers: {}, savedTestState: null
+      answers: {}, savedTestState: null, debounceTimer: null
     };
     const STORAGE_KEY = 'edhistory_results';
     const PROGRESS_KEY = 'edhistory_progress';
+    const COMPLETED_KEY = 'edhistory_completed'; // список учнів, які завершили тест
 
     function saveResult(r) {
       let a = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -194,18 +224,37 @@
 
     const container = document.getElementById('app-container');
 
+    // --- Пароль вчителя ---
+    const TEACHER_PASSWORD = "whis9dt";
+
     window.login = function(role) {
-      appState.role = role;
-      document.getElementById('user-info').classList.remove('hidden');
       if (role === 'teacher') {
+        const pwd = prompt("Введіть пароль вчителя:");
+        if (pwd !== TEACHER_PASSWORD) {
+          alert("Невірний пароль!");
+          return;
+        }
+        appState.role = 'teacher';
+        document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('role-badge').innerText = '👨‍🏫 Вчитель';
         renderTeacherDashboard();
       } else {
         const nameInput = document.getElementById('student-name');
         const name = nameInput ? nameInput.value.trim() : '';
         if (!name) { alert("Введіть ім'я"); return; }
+        
+        // Перевірка чи учень вже завершив тест
+        const completed = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]');
+        if (completed.includes(name)) {
+          alert("Ви вже проходили тест. Повторне проходження заборонено.");
+          return;
+        }
+        
+        appState.role = 'student';
         appState.studentName = name;
+        document.getElementById('user-info').classList.remove('hidden');
         document.getElementById('role-badge').innerText = '🎒 ' + name;
+        
         const saved = localStorage.getItem(PROGRESS_KEY);
         if (saved) {
           try {
@@ -224,8 +273,9 @@
 
     window.logout = function() {
       clearInterval(appState.timerInterval);
+      clearTimeout(appState.debounceTimer);
       localStorage.removeItem(PROGRESS_KEY);
-      appState = { role:null, studentName:'', currentVariant:null, timerInterval:null, timeLeft:0, answers:{}, savedTestState:null };
+      appState = { role:null, studentName:'', currentVariant:null, timerInterval:null, timeLeft:0, answers:{}, debounceTimer:null };
       renderLogin();
     };
 
@@ -233,14 +283,14 @@
       document.getElementById('user-info').classList.add('hidden');
       container.innerHTML = `
         <div class="min-h-full flex items-center justify-center p-4 fade-in">
-          <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-            <h1 class="text-3xl font-bold serif mb-2">Авторизація</h1>
-            <p class="text-slate-500 mb-4">Система комплексного оцінювання</p>
-            <button onclick="login('teacher')" class="w-full py-3 bg-indigo-600 text-white rounded mb-3">👨‍🏫 Вхід для Вчителя</button>
+          <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md">
+            <h1 class="text-2xl sm:text-3xl font-bold serif mb-2">Авторизація</h1>
+            <p class="text-slate-500 mb-4 text-sm sm:text-base">Система комплексного оцінювання</p>
+            <button onclick="login('teacher')" class="w-full py-3 bg-indigo-600 text-white rounded mb-3 text-base">👨‍🏫 Вхід для Вчителя</button>
             <div class="bg-slate-50 p-4 rounded border">
               <label class="block text-sm mb-1">Приєднання до тестування</label>
-              <input type="text" id="student-name" class="w-full border p-2 rounded mb-2" placeholder="Прізвище та Ім'я">
-              <button onclick="login('student')" class="w-full py-2 bg-emerald-600 text-white rounded">🎒 Почати тест (40 хв)</button>
+              <input type="text" id="student-name" class="w-full border p-3 rounded mb-3 text-base" placeholder="Прізвище та Ім'я">
+              <button onclick="login('student')" class="w-full py-3 bg-emerald-600 text-white rounded text-base">🎒 Почати тест (40 хв)</button>
             </div>
           </div>
         </div>`;
@@ -256,7 +306,7 @@
       appState.timeLeft = appState.currentVariant.duration;
       renderTest();
       startTimer();
-      setupAutoSave();
+      attachAutoSaveListeners();
     }
 
     function resumeTest(progress) {
@@ -268,88 +318,125 @@
         if (progress.answers) restoreAnswers(progress.answers);
       }, 50);
       startTimer();
-      setupAutoSave();
+      attachAutoSaveListeners();
     }
 
     function restoreAnswers(answers) {
       for (let key in answers) {
         const val = answers[key];
-        if (key.includes('_pos')) {
-          const sel = document.querySelector(`select[name="${key}"]`);
-          if (sel) sel.value = val;
-        } else if (key.includes('_')) {
-          const sel = document.querySelector(`select[name="${key}"]`);
-          if (sel) sel.value = val;
-        } else {
-          const radio = document.querySelector(`input[name="${key}"][value="${val}"]`);
-          if (radio) radio.checked = true;
+        const elem = document.querySelector(`[name="${key}"]`);
+        if (!elem) continue;
+        if (elem.type === 'radio' || elem.type === 'checkbox') {
+          if (Array.isArray(val)) {
+            val.forEach(v => {
+              const cb = document.querySelector(`[name="${key}"][value="${v}"]`);
+              if (cb) cb.checked = true;
+            });
+          } else {
+            const radio = document.querySelector(`[name="${key}"][value="${val}"]`);
+            if (radio) radio.checked = true;
+          }
+        } else if (elem.tagName === 'SELECT') {
+          elem.value = val;
+        } else if (elem.tagName === 'TEXTAREA') {
+          elem.value = val;
         }
       }
-      const openField = document.getElementById('open-answer');
-      if (openField && answers['openAnswer']) openField.value = answers['openAnswer'];
     }
 
     function renderTest() {
       const variant = appState.currentVariant;
       let html = `
-        <div class="sticky-timer bg-white/90 border-b py-3 px-4 flex justify-between">
-          <div class="font-bold">${variant.title}</div>
-          <div class="flex items-center space-x-3">
-            <span class="text-sm">Залишилось:</span>
-            <div id="timer-display" class="bg-indigo-100 text-indigo-800 font-mono text-lg px-3 py-1 rounded">${formatTime(appState.timeLeft)}</div>
-            <button onclick="submitTest()" class="bg-indigo-600 text-white px-4 py-1.5 rounded">Здати</button>
+        <div class="sticky-timer bg-white/90 border-b py-2 px-4 flex flex-wrap justify-between items-center">
+          <div class="font-bold text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">${variant.title}</div>
+          <div class="flex items-center space-x-2 sm:space-x-3 mt-1 sm:mt-0">
+            <span class="text-xs sm:text-sm">Залишилось:</span>
+            <div id="timer-display" class="bg-indigo-100 text-indigo-800 font-mono text-base sm:text-lg px-2 sm:px-3 py-1 rounded">${formatTime(appState.timeLeft)}</div>
+            <button onclick="submitTest()" class="bg-indigo-600 text-white px-3 sm:px-4 py-1.5 rounded text-sm sm:text-base">Здати</button>
           </div>
         </div>
-        <div class="max-w-4xl mx-auto p-4 space-y-8">`;
+        <div class="max-w-4xl mx-auto p-3 sm:p-4 space-y-6 sm:space-y-8">`;
       
       variant.sections.forEach((sec, secIdx) => {
-        html += `<div class="bg-white rounded-xl shadow-sm border"><div class="bg-slate-800 text-white px-6 py-4"><h2>${sec.title}</h2><p>${sec.desc}</p></div><div class="p-6 space-y-6">`;
+        html += `<div class="bg-white rounded-xl shadow-sm border"><div class="bg-slate-800 text-white px-4 sm:px-6 py-3 sm:py-4"><h2 class="text-lg sm:text-xl">${sec.title}</h2><p class="text-xs sm:text-sm opacity-80">${sec.desc}</p></div><div class="p-4 sm:p-6 space-y-4 sm:space-y-6">`;
+        
         if (sec.type === "mcq") {
           sec.questions.forEach((q,i) => {
-            html += `<div class="border-b pb-4"><p class="font-semibold">${i+1}. ${q.q}</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">`;
+            html += `<div class="border-b pb-3"><p class="font-semibold text-sm sm:text-base">${i+1}. ${q.q}</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">`;
             q.options.forEach((opt, oIdx) => {
               html += `<div><input type="radio" name="${q.id}" id="${q.id}_${oIdx}" value="${oIdx}" class="peer hidden radio-custom">
-                <label for="${q.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50 peer-checked:border-indigo-500">${opt}</label></div>`;
+                <label for="${q.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50 peer-checked:border-indigo-500 text-sm sm:text-base">${opt}</label></div>`;
             });
             html += `</div></div>`;
           });
         } else if (sec.type === "matching") {
-          sec.questions.forEach((q, blockIdx) => {
-            html += `<div class="border-b pb-6"><p class="font-semibold">${q.q}</p><div class="space-y-3">`;
-            q.items.forEach((item, iIdx) => {
-              html += `<div class="flex flex-col sm:flex-row sm:items-center"><div class="sm:w-1/2 bg-slate-50 p-2 rounded border">${item}</div>
-                <div class="sm:w-1/2"><select name="${q.id}_${iIdx}" class="w-full p-2 border rounded"><option value="-1" disabled selected>-- Оберіть --</option>`;
-              q.options.forEach((opt, oIdx) => html += `<option value="${oIdx}">${opt}</option>`);
-              html += `</select></div></div>`;
-            });
-            html += `</div></div>`;
+          const d = sec.data;
+          html += `<div class="border-b pb-4"><p class="font-semibold text-sm sm:text-base">${d.q}</p><div class="space-y-3 mt-2">`;
+          d.items.forEach((item, iIdx) => {
+            html += `<div class="flex flex-col sm:flex-row sm:items-center gap-2"><div class="sm:w-1/2 bg-slate-50 p-2 rounded border text-sm">${item}</div>
+              <div class="sm:w-1/2"><select name="${d.id}_${iIdx}" class="w-full p-2 border rounded text-sm sm:text-base"><option value="-1" disabled selected>-- Оберіть --</option>`;
+            d.options.forEach((opt, oIdx) => html += `<option value="${oIdx}">${opt}</option>`);
+            html += `</select></div></div>`;
           });
+          html += `</div></div>`;
+        } else if (sec.type === "checkbox") {
+          const d = sec.data;
+          html += `<div class="border-b pb-4"><p class="font-semibold text-sm sm:text-base">${d.q}</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">`;
+          d.options.forEach((opt, oIdx) => {
+            html += `<div><input type="checkbox" name="${d.id}" id="${d.id}_${oIdx}" value="${oIdx}" class="peer hidden checkbox-custom">
+              <label for="${d.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50 peer-checked:border-indigo-500 text-sm sm:text-base">${opt}</label></div>`;
+          });
+          html += `</div><p class="text-xs text-slate-500 mt-1">Виберіть усі правильні варіанти</p></div>`;
+        } else if (sec.type === "blanks") {
+          const d = sec.data;
+          html += `<div class="border-b pb-4"><p class="text-sm sm:text-base">${d.textBefore} `;
+          d.blanks.forEach((blank, idx) => {
+            html += `<select name="${d.id}_blank${idx}" class="inline-block w-auto mx-1 p-1 border rounded text-sm">`;
+            blank.options.forEach((opt, oIdx) => html += `<option value="${oIdx}" ${oIdx===0?'selected':''}>${opt}</option>`);
+            html += `</select> `;
+          });
+          html += `${d.textAfter}</p></div>`;
+        } else if (sec.type === "dragdrop") {
+          const d = sec.data;
+          html += `<div class="border-b pb-4"><p class="font-semibold text-sm sm:text-base">${d.q}</p><div class="space-y-3 mt-2">`;
+          d.items.forEach((item, iIdx) => {
+            html += `<div class="flex flex-col sm:flex-row sm:items-center gap-2"><div class="sm:w-1/2 bg-slate-50 p-2 rounded border text-sm">${item}</div>
+              <div class="sm:w-1/2"><select name="${d.id}_${iIdx}" class="w-full p-2 border rounded text-sm"><option value="-1" disabled selected>-- Оберіть --</option>`;
+            d.options.forEach((opt, oIdx) => html += `<option value="${oIdx}">${opt}</option>`);
+            html += `</select></div></div>`;
+          });
+          html += `</div></div>`;
+        } else if (sec.type === "shorttext") {
+          const d = sec.data;
+          html += `<div class="border-b pb-4"><p class="font-semibold text-sm sm:text-base">${d.q}</p>
+            <textarea name="${d.id}" rows="3" class="w-full border rounded p-3 text-sm sm:text-base mt-2" placeholder="Введіть коротку відповідь..."></textarea>
+            <p class="text-xs text-slate-500 mt-1">Автоматична перевірка за ключовими словами</p></div>`;
         } else if (sec.type === "sequence") {
           html += `<div class="space-y-3">`;
           [0,1,2,3].forEach(pos => {
-            html += `<div class="flex items-center space-x-3"><div class="bg-indigo-100 w-8 h-8 flex items-center justify-center rounded-full">${pos+1}</div>
-              <select name="${sec.id}_pos${pos}" class="flex-1 p-3 border rounded"><option value="" disabled selected>-- Оберіть --</option>`;
+            html += `<div class="flex items-center space-x-2"><div class="bg-indigo-100 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full text-sm">${pos+1}</div>
+              <select name="${sec.id}_pos${pos}" class="flex-1 p-2 sm:p-3 border rounded text-sm"><option value="" disabled selected>-- Оберіть --</option>`;
             sec.items.forEach(item => html += `<option value="${item.id}">${item.text}</option>`);
             html += `</select></div>`;
           });
           html += `</div>`;
         } else if (sec.type === "source") {
-          html += `<div class="bg-amber-50 border-l-4 border-amber-500 p-4 italic">${sec.quote}<br><span class="font-bold">${sec.author}</span></div>`;
+          html += `<div class="bg-amber-50 border-l-4 border-amber-500 p-3 sm:p-4 italic text-sm sm:text-base">${sec.quote}<br><span class="font-bold">${sec.author}</span></div>`;
           sec.questions.forEach((q,i) => {
-            html += `<div><p class="font-semibold">${i+1}. ${q.q}</p><div class="space-y-2">`;
+            html += `<div class="mt-4"><p class="font-semibold text-sm sm:text-base">${i+1}. ${q.q}</p><div class="grid grid-cols-1 gap-2 mt-2">`;
             q.options.forEach((opt, oIdx) => {
               html += `<div><input type="radio" name="${q.id}" id="${q.id}_${oIdx}" value="${oIdx}" class="peer hidden radio-custom">
-                <label for="${q.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50">${opt}</label></div>`;
+                <label for="${q.id}_${oIdx}" class="block p-3 border rounded cursor-pointer hover:bg-slate-50 peer-checked:bg-indigo-50 text-sm">${opt}</label></div>`;
             });
             html += `</div></div>`;
           });
         } else if (sec.type === "open") {
-          html += `<div class="bg-slate-50 p-4 rounded border">${sec.q}</div>
-            <textarea id="open-answer" rows="8" class="w-full border rounded p-4" placeholder="Ваша відповідь..."></textarea>`;
+          html += `<div class="bg-slate-50 p-3 sm:p-4 rounded border text-sm sm:text-base">${sec.q}</div>
+            <textarea id="open-answer" rows="6" class="w-full border rounded p-3 text-sm sm:text-base mt-3" placeholder="Ваша розгорнута відповідь..."></textarea>`;
         }
         html += `</div></div>`;
       });
-      html += `<div class="text-center pt-4"><button onclick="submitTest()" class="bg-emerald-600 text-white text-xl py-4 px-12 rounded-xl">Завершити</button></div></div>`;
+      html += `<div class="text-center pt-4 pb-6"><button onclick="submitTest()" class="bg-emerald-600 text-white text-lg sm:text-xl py-3 sm:py-4 px-8 sm:px-12 rounded-xl">Завершити тест</button></div></div>`;
       container.innerHTML = html;
     }
 
@@ -369,12 +456,17 @@
       }, 1000);
     }
 
-    function setupAutoSave() {
-      setInterval(() => {
-        if (appState.currentVariant && appState.role === 'student') {
-          saveCurrentProgress();
-        }
-      }, 15000);
+    function attachAutoSaveListeners() {
+      const saveDebounced = () => {
+        clearTimeout(appState.debounceTimer);
+        appState.debounceTimer = setTimeout(() => {
+          if (appState.currentVariant && appState.role === 'student') {
+            saveCurrentProgress();
+          }
+        }, 500);
+      };
+      document.addEventListener('change', saveDebounced);
+      document.addEventListener('input', saveDebounced);
       window.addEventListener('beforeunload', () => saveCurrentProgress());
     }
 
@@ -394,7 +486,12 @@
     function collectCurrentAnswers() {
       const answers = {};
       document.querySelectorAll('input[type="radio"]:checked').forEach(r => answers[r.name] = r.value);
+      document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+        if (!answers[cb.name]) answers[cb.name] = [];
+        answers[cb.name].push(cb.value);
+      });
       document.querySelectorAll('select').forEach(s => { if (s.value && s.value !== '-1') answers[s.name] = s.value; });
+      document.querySelectorAll('textarea').forEach(t => { if (t.id !== 'open-answer') answers[t.name] = t.value; });
       const openAns = document.getElementById('open-answer');
       if (openAns) answers['openAnswer'] = openAns.value;
       return answers;
@@ -402,49 +499,88 @@
 
     window.submitTest = function() {
       clearInterval(appState.timerInterval);
+      clearTimeout(appState.debounceTimer);
       localStorage.removeItem(PROGRESS_KEY);
+      
+      // Позначити учня як такого, що завершив тест
+      const completed = JSON.parse(localStorage.getItem(COMPLETED_KEY) || '[]');
+      if (!completed.includes(appState.studentName)) {
+        completed.push(appState.studentName);
+        localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed));
+      }
+      
       const variant = appState.currentVariant;
       let closedScore = 0;
 
-      // MCQ
-      variant.sections[0].questions.forEach(q => {
-        const sel = document.querySelector(`input[name="${q.id}"]:checked`);
-        if (sel && parseInt(sel.value) === q.correct) closedScore += 0.5;
-      });
-
-      // Matching (завжди 2 блоки, кожен по 4 пари)
-      const matchSec = variant.sections[1];
-      matchSec.questions.forEach(q => {
-        q.items.forEach((_, idx) => {
-          const sel = document.querySelector(`select[name="${q.id}_${idx}"]`);
-          if (sel && parseInt(sel.value) === q.correct[idx]) closedScore += 0.25;
-        });
-      });
-
-      // Sequence
-      const seqSec = variant.sections[2];
-      const selectedVals = [];
-      let hasDuplicate = false;
-      for (let i=0; i<4; i++) {
-        const sel = document.querySelector(`select[name="${seqSec.id}_pos${i}"]`);
-        if (!sel || !sel.value) { alert('Оберіть усі події в хронології!'); return; }
-        if (selectedVals.includes(sel.value)) hasDuplicate = true;
-        selectedVals.push(sel.value);
-      }
-      if (hasDuplicate) { alert('Події не повинні повторюватись!'); return; }
-      let correctSeq = 0;
-      for (let i=0; i<4; i++) {
-        const sel = document.querySelector(`select[name="${seqSec.id}_pos${i}"]`);
-        if (sel.value === seqSec.correctOrder[i]) correctSeq++;
-      }
-      if (correctSeq === 4) closedScore += 1;
-      else if (correctSeq >= 2) closedScore += 0.5;
-
-      // Source
-      const srcSec = variant.sections[3];
-      srcSec.questions.forEach(q => {
-        const sel = document.querySelector(`input[name="${q.id}"]:checked`);
-        if (sel && parseInt(sel.value) === q.correct) closedScore += 1;
+      // Обробка секцій
+      variant.sections.forEach(sec => {
+        if (sec.type === "mcq") {
+          sec.questions.forEach(q => {
+            const sel = document.querySelector(`input[name="${q.id}"]:checked`);
+            if (sel && parseInt(sel.value) === q.correct) closedScore += 0.5;
+          });
+        } else if (sec.type === "matching") {
+          const d = sec.data;
+          d.items.forEach((_, idx) => {
+            const sel = document.querySelector(`select[name="${d.id}_${idx}"]`);
+            if (sel && parseInt(sel.value) === d.correct[idx]) closedScore += 0.25;
+          });
+        } else if (sec.type === "checkbox") {
+          const d = sec.data;
+          const checked = Array.from(document.querySelectorAll(`input[name="${d.id}"]:checked`)).map(cb => parseInt(cb.value));
+          const correctSet = new Set(d.correct);
+          let correctCount = 0;
+          checked.forEach(v => { if (correctSet.has(v)) correctCount++; });
+          // часткові бали: 0.5 за обидві правильні, 0.25 за одну
+          if (correctCount === d.correct.length) closedScore += 0.5;
+          else if (correctCount > 0) closedScore += 0.25;
+        } else if (sec.type === "blanks") {
+          const d = sec.data;
+          let correctBlanks = 0;
+          d.blanks.forEach((blank, idx) => {
+            const sel = document.querySelector(`select[name="${d.id}_blank${idx}"]`);
+            if (sel && parseInt(sel.value) === blank.correct) correctBlanks++;
+          });
+          if (correctBlanks === d.blanks.length) closedScore += 0.5;
+          else if (correctBlanks > 0) closedScore += 0.25;
+        } else if (sec.type === "dragdrop") {
+          const d = sec.data;
+          d.items.forEach((_, idx) => {
+            const sel = document.querySelector(`select[name="${d.id}_${idx}"]`);
+            if (sel && parseInt(sel.value) === d.correct[idx]) closedScore += 0.25;
+          });
+        } else if (sec.type === "shorttext") {
+          const d = sec.data;
+          const answer = document.querySelector(`textarea[name="${d.id}"]`)?.value.toLowerCase() || '';
+          const keywords = d.keywords.map(k => k.toLowerCase());
+          let matched = keywords.filter(kw => answer.includes(kw)).length;
+          let score = 0;
+          if (matched >= 2) score = d.maxScore;
+          else if (matched === 1) score = d.maxScore / 2;
+          closedScore += score;
+        } else if (sec.type === "sequence") {
+          const selectedVals = [];
+          let hasDuplicate = false;
+          for (let i=0; i<4; i++) {
+            const sel = document.querySelector(`select[name="${sec.id}_pos${i}"]`);
+            if (!sel || !sel.value) { alert('Оберіть усі події в хронології!'); return; }
+            if (selectedVals.includes(sel.value)) hasDuplicate = true;
+            selectedVals.push(sel.value);
+          }
+          if (hasDuplicate) { alert('Події не повинні повторюватись!'); return; }
+          let correctSeq = 0;
+          for (let i=0; i<4; i++) {
+            const sel = document.querySelector(`select[name="${sec.id}_pos${i}"]`);
+            if (sel.value === sec.correctOrder[i]) correctSeq++;
+          }
+          if (correctSeq === 4) closedScore += 1;
+          else if (correctSeq >= 2) closedScore += 0.5;
+        } else if (sec.type === "source") {
+          sec.questions.forEach(q => {
+            const sel = document.querySelector(`input[name="${q.id}"]:checked`);
+            if (sel && parseInt(sel.value) === q.correct) closedScore += 1;
+          });
+        }
       });
 
       const openAnswer = document.getElementById('open-answer')?.value || '';
@@ -461,51 +597,50 @@
         checked: false
       };
       saveResult(record);
-
       renderStudentResults(closedScore, hasOpen);
     };
 
     function renderStudentResults(closed, hasOpen) {
       container.innerHTML = `
-        <div class="h-full flex items-center justify-center p-4"><div class="bg-white p-8 rounded-2xl shadow-xl max-w-lg text-center">
-          <div class="text-6xl mb-4">🏆</div><h2 class="text-3xl font-bold">Тест завершено!</h2>
-          <p class="mb-4">Дякуємо, ${appState.studentName}.</p>
+        <div class="h-full flex items-center justify-center p-4"><div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-lg text-center">
+          <div class="text-5xl sm:text-6xl mb-4">🏆</div><h2 class="text-2xl sm:text-3xl font-bold">Тест завершено!</h2>
+          <p class="mb-4 text-sm sm:text-base">Дякуємо, ${appState.studentName}.</p>
           <div class="bg-slate-50 p-4 rounded mb-4 text-left">
-            <div class="flex justify-between"><span>Закрита частина:</span><span class="font-bold text-indigo-600">${closed} / 8 б.</span></div>
-            <div class="flex justify-between"><span>Відкрита частина:</span><span class="${hasOpen?'text-amber-600':'text-red-600'}">${hasOpen?'Очікує':'Не виконано'}</span></div>
+            <div class="flex justify-between"><span>Закрита частина:</span><span class="font-bold text-indigo-600">${closed.toFixed(2)} / 8+ балів</span></div>
+            <div class="flex justify-between"><span>Відкрита частина:</span><span class="${hasOpen?'text-amber-600':'text-red-600'}">${hasOpen?'Очікує перевірки':'Не виконано'}</span></div>
           </div>
-          <button onclick="logout()" class="w-full py-3 bg-slate-800 text-white rounded">На головну</button>
+          <button onclick="logout()" class="w-full py-3 bg-slate-800 text-white rounded text-base">На головну</button>
         </div></div>`;
     }
 
-    // ---------- ВЧИТЕЛЬ ----------
+    // ---------- ВЧИТЕЛЬ (без змін, але адаптовано) ----------
     function renderTeacherDashboard() {
       const results = getAllResults();
       const total = results.length;
       const avg = total ? (results.reduce((a,c)=> a + c.total, 0)/total).toFixed(2) : 0;
       
       let html = `
-        <div class="max-w-7xl mx-auto p-4 fade-in">
-          <h1 class="text-3xl font-bold serif mb-4">Панель вчителя</h1>
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-white p-5 rounded-xl shadow"><h3 class="font-bold text-lg">📊 Статистика</h3>
+        <div class="max-w-7xl mx-auto p-3 sm:p-4 fade-in">
+          <h1 class="text-2xl sm:text-3xl font-bold serif mb-4">Панель вчителя</h1>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div class="bg-white p-4 sm:p-5 rounded-xl shadow"><h3 class="font-bold text-lg">📊 Статистика</h3>
               <p>Всього робіт: ${total}</p><p>Середній бал: ${avg}</p>
               <div class="chart-container mt-4"><canvas id="scoreChart"></canvas></div>
             </div>
-            <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow">
-              <div class="flex justify-between items-center mb-3">
+            <div class="lg:col-span-2 bg-white p-4 sm:p-5 rounded-xl shadow">
+              <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
                 <h3 class="font-bold text-lg">📋 Результати</h3>
-                <button onclick="exportToCSV()" class="bg-green-600 text-white px-4 py-1.5 rounded">📥 CSV</button>
+                <button onclick="exportToCSV()" class="bg-green-600 text-white px-4 py-2 rounded text-sm">📥 CSV</button>
               </div>
               <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead><tr class="bg-slate-100"><th class="p-2">Учень</th><th class="p-2">Варіант</th><th class="p-2">Закрита</th><th class="p-2">Відкрита</th><th class="p-2">Загалом</th><th class="p-2">Дії</th></tr></thead>
+                <table class="w-full text-xs sm:text-sm">
+                  <thead><tr class="bg-slate-100"><th class="p-2">Учень</th><th class="p-2">Варіант</th><th class="p-2">Закр.</th><th class="p-2">Відкр.</th><th class="p-2">Заг.</th><th class="p-2">Дії</th></tr></thead>
                   <tbody id="results-tbody">`;
       results.forEach((r, idx) => {
-        html += `<tr class="border-b"><td class="p-2">${r.student}</td><td class="p-2">${r.variant}</td><td class="p-2">${r.closedScore}</td>
+        html += `<tr class="border-b"><td class="p-2">${r.student}</td><td class="p-2 max-w-[120px] truncate">${r.variant}</td><td class="p-2">${r.closedScore.toFixed(2)}</td>
           <td class="p-2">${r.openScore !== null ? r.openScore : (r.checked ? '—' : '❌')}</td>
-          <td class="p-2 font-bold">${r.total}</td>
-          <td class="p-2"><button onclick="checkOpen(${idx})" class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded">Перевірити</button></td></tr>`;
+          <td class="p-2 font-bold">${r.total.toFixed(2)}</td>
+          <td class="p-2"><button onclick="checkOpen(${idx})" class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs sm:text-sm">Перевірити</button></td></tr>`;
       });
       html += `</tbody></table></div></div></div></div>`;
       container.innerHTML = html;
@@ -524,13 +659,13 @@
       const rec = results[index];
       if (!rec) return;
       container.innerHTML = `
-        <div class="max-w-4xl mx-auto p-4">
-          <div class="bg-white rounded-xl shadow p-6">
-            <h2 class="text-2xl font-bold mb-2">${rec.student} — ${rec.variant}</h2>
-            <p class="mb-4">Закрита частина: ${rec.closedScore} балів</p>
-            <div class="bg-slate-100 p-4 rounded border mb-4">
+        <div class="max-w-4xl mx-auto p-3 sm:p-4">
+          <div class="bg-white rounded-xl shadow p-4 sm:p-6">
+            <h2 class="text-xl sm:text-2xl font-bold mb-2">${rec.student} — ${rec.variant}</h2>
+            <p class="mb-4">Закрита частина: ${rec.closedScore.toFixed(2)} балів</p>
+            <div class="bg-slate-100 p-3 sm:p-4 rounded border mb-4">
               <p class="font-semibold">Відповідь на відкрите питання:</p>
-              <p class="whitespace-pre-wrap">${rec.openAnswer || '(відсутня)'}</p>
+              <p class="whitespace-pre-wrap text-sm sm:text-base">${rec.openAnswer || '(відсутня)'}</p>
             </div>
             <label class="block mb-2">Оцінка (0–4):</label>
             <input type="number" id="open-score-input" min="0" max="4" step="0.5" value="${rec.openScore||0}" class="border p-2 rounded w-24 mb-4">
