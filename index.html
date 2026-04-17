@@ -364,7 +364,12 @@
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbydXoOhPFA-tjnNlljfGQ0uvAg8PKaL8Tv9JhHGVd0Md4VllVKf5oATGBJQ6FUVMezT/exec';
   const STORAGE_KEY = 'world_history_9_test_state_v3';
   const THEME_KEY = 'world_history_9_theme';
-
+// ДОДАТИ ПІСЛЯ РЯДКА 366 (після const THEME_KEY = ...)
+function handleError(errorMsg) {
+  console.error('❌ Помилка:', errorMsg);
+  alert('⚠️ ' + errorMsg);
+}
+  
   let appState = {
     sessionId: null,
     variant: null,
@@ -532,28 +537,55 @@
     }, 1000);
   }
 
-  function getJSONP(url, callbackName, callback) {
-    const script = document.createElement('script');
-    const sep = url.includes('?') ? '&' : '?';
-    const fullUrl = `${url}${sep}callback=${callbackName}&_=${Date.now()}`;
+function getJSONP(url, callbackName, callback, attempt = 1) {
+  const script = document.createElement('script');
+  const sep = url.includes('?') ? '&' : '?';
+  const fullUrl = `${url}${sep}callback=${callbackName}&_=${Date.now()}`;
 
-    window[callbackName] = function(data) {
-      try { callback(data); }
-      finally {
-        delete window[callbackName];
-        script.remove();
+  const timeout = setTimeout(() => {
+    delete window[callbackName];
+    script.remove();
+    
+    if (attempt < 3) {
+      console.warn(`⏳ Спроба ${attempt} не вдалася. Повторюю...`);
+      getJSONP(url, callbackName, callback, attempt + 1);
+    } else {
+      handleError('Запит перевищив час очікування. Перевірте з\'єднання.');
+      callback({ error: 'Timeout' });
+    }
+  }, 8000); // 8 секунд
+
+  window[callbackName] = function(data) {
+    try {
+      clearTimeout(timeout);
+      if (data && data.error) {
+        handleError('Помилка сервера: ' + data.error);
       }
-    };
-
-    script.onerror = function() {
+      callback(data);
+    }
+    finally {
       delete window[callbackName];
       script.remove();
-      callback({ error: 'Не вдалося отримати відповідь від сервера.' });
-    };
+    }
+  };
 
-    script.src = fullUrl;
-    document.body.appendChild(script);
-  }
+  script.onerror = function() {
+    clearTimeout(timeout);
+    delete window[callbackName];
+    script.remove();
+    
+    if (attempt < 3) {
+      console.warn(`⚠️ Спроба ${attempt} не вдалася. Повторюю...`);
+      getJSONP(url, callbackName, callback, attempt + 1);
+    } else {
+      handleError('Не вдалося завантажити тест. Повторіть спробу.');
+      callback({ error: 'Network error' });
+    }
+  };
+
+  script.src = fullUrl;
+  document.body.appendChild(script);
+}
 
   function postFormJSONP(url, payload, callbackName, callback) {
     const iframeName = 'hidden_iframe_' + Date.now();
@@ -908,35 +940,40 @@
 
     el.startBtn.disabled = true;
 
-    getJSON(GAS_URL, (data) => {
-      el.startBtn.disabled = false;
-      if (data.error) {
-        alert('Помилка завантаження тесту: ' + data.error);
-        return;
-      }
-
-      appState.sessionId = data.sessionId;
-      appState.variant = data.variant;
-      appState.studentName = studentName;
-      appState.className = className;
-      appState.startTime = data.startTime;
-      appState.timeLeft = data.variant.duration || 1500;
-      appState.answers = {};
-      appState.openActionsCount = 0;
-      appState.telemetry = {
-        pasteCount: 0,
-        blurCount: 0,
-        keydownCount: 0,
-        inputEventsCount: 0,
-        backspaceCount: 0,
-        focusLossSeconds: 0,
-        finalTextLength: 0
-      };
-
-      saveLocalState();
-      renderTest();
-    });
+getJSON(GAS_URL, (data) => {
+  el.startBtn.disabled = false;
+  
+  if (data.error) {
+    handleError('Помилка завантаження тесту: ' + data.error);
+    return;
   }
+
+  if (!data.sessionId || !data.variant) {
+    handleError('Некоректні дані від сервера.');
+    return;
+  }
+
+  appState.sessionId = data.sessionId;
+  appState.variant = data.variant;
+  appState.studentName = studentName;
+  appState.className = className;
+  appState.startTime = data.startTime;
+  appState.timeLeft = data.variant.duration || 1500;
+  appState.answers = {};
+  appState.openActionsCount = 0;
+  appState.telemetry = {
+    pasteCount: 0,
+    blurCount: 0,
+    keydownCount: 0,
+    inputEventsCount: 0,
+    backspaceCount: 0,
+    focusLossSeconds: 0,
+    finalTextLength: 0
+  };
+
+  saveLocalState();
+  renderTest();
+});
 
   function fillResults(resp) {
     el.resultClosed.textContent = Number(resp.closedScore || 0).toFixed(2);
@@ -964,20 +1001,21 @@
     };
 
     el.submitBtn.disabled = true;
-    postJSON(payload, (resp) => {
-      el.submitBtn.disabled = false;
+postJSON(payload, (resp) => {
+  el.submitBtn.disabled = false;
 
-      if (!resp.success) {
-        alert(resp.error || 'Не вдалося завершити тест.');
-        return;
-      }
-
-      appState.result = resp;
-      fillResults(resp);
-      clearLocalState();
-      switchScreen('result');
-    });
+  if (!resp || !resp.success) {
+    handleError(resp?.error || 'Не вдалося завершити тест. Спробуйте ще раз.');
+    // Зберегти стан для повторної спроби
+    saveLocalState();
+    return;
   }
+
+  appState.result = resp;
+  fillResults(resp);
+  clearLocalState();
+  switchScreen('result');
+});
 
   function initAnimationsAndAuto() {
     setInterval(() => {
