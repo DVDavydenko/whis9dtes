@@ -40,6 +40,7 @@
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
+
   body {
     margin: 0;
     font-family: 'Inter', sans-serif;
@@ -183,7 +184,7 @@
     transition: width .35s ease;
   }
 
-  .section-card, .question-card, .result-card {
+  .section-card, .question-card {
     padding: 20px;
     margin-bottom: 16px;
   }
@@ -195,6 +196,7 @@
   }
 
   .options { display: grid; gap: 10px; }
+
   .opt {
     display: flex;
     gap: 10px;
@@ -206,10 +208,12 @@
     cursor: pointer;
     transition: border-color .16s ease, transform .16s ease, background .16s ease;
   }
+
   .opt:hover {
     border-color: var(--primary);
     transform: translateY(-1px);
   }
+
   .opt input { margin-top: 3px; }
 
   .badge {
@@ -222,6 +226,7 @@
     font-weight: 800;
     letter-spacing: .02em;
   }
+
   .badge.low { background: rgba(16,185,129,.14); color: var(--success); }
   .badge.medium { background: rgba(245,158,11,.16); color: var(--warning); }
   .badge.high { background: rgba(239,68,68,.14); color: var(--danger); }
@@ -239,8 +244,17 @@
     border: 1px solid var(--border);
     background: var(--surface);
   }
-  .metric .label { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
-  .metric .value { font-size: 28px; font-weight: 800; }
+
+  .metric .label {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .metric .value {
+    font-size: 28px;
+    font-weight: 800;
+  }
 
   .theme-toggle {
     background: var(--surface);
@@ -364,12 +378,12 @@
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbydXoOhPFA-tjnNlljfGQ0uvAg8PKaL8Tv9JhHGVd0Md4VllVKf5oATGBJQ6FUVMezT/exec';
   const STORAGE_KEY = 'world_history_9_test_state_v3';
   const THEME_KEY = 'world_history_9_theme';
-// ДОДАТИ ПІСЛЯ РЯДКА 366 (після const THEME_KEY = ...)
-function handleError(errorMsg) {
-  console.error('❌ Помилка:', errorMsg);
-  alert('⚠️ ' + errorMsg);
-}
-  
+
+  function handleError(errorMsg) {
+    console.error('❌ Помилка:', errorMsg);
+    alert('⚠️ ' + errorMsg);
+  }
+
   let appState = {
     sessionId: null,
     variant: null,
@@ -537,55 +551,54 @@ function handleError(errorMsg) {
     }, 1000);
   }
 
-function getJSONP(url, callbackName, callback, attempt = 1) {
-  const script = document.createElement('script');
-  const sep = url.includes('?') ? '&' : '?';
-  const fullUrl = `${url}${sep}callback=${callbackName}&_=${Date.now()}`;
+  function getJSONP(url, callbackName, callback, attempt = 1) {
+    const script = document.createElement('script');
+    const sep = url.includes('?') ? '&' : '?';
+    const fullUrl = `${url}${sep}callback=${callbackName}&_=${Date.now()}`;
 
-  const timeout = setTimeout(() => {
-    delete window[callbackName];
-    script.remove();
-    
-    if (attempt < 3) {
-      console.warn(`⏳ Спроба ${attempt} не вдалася. Повторюю...`);
-      getJSONP(url, callbackName, callback, attempt + 1);
-    } else {
-      handleError('Запит перевищив час очікування. Перевірте з\'єднання.');
-      callback({ error: 'Timeout' });
-    }
-  }, 8000); // 8 секунд
-
-  window[callbackName] = function(data) {
-    try {
-      clearTimeout(timeout);
-      if (data && data.error) {
-        handleError('Помилка сервера: ' + data.error);
-      }
-      callback(data);
-    }
-    finally {
+    const timeout = setTimeout(() => {
       delete window[callbackName];
       script.remove();
-    }
-  };
 
-  script.onerror = function() {
-    clearTimeout(timeout);
-    delete window[callbackName];
-    script.remove();
-    
-    if (attempt < 3) {
-      console.warn(`⚠️ Спроба ${attempt} не вдалася. Повторюю...`);
-      getJSONP(url, callbackName, callback, attempt + 1);
-    } else {
-      handleError('Не вдалося завантажити тест. Повторіть спробу.');
-      callback({ error: 'Network error' });
-    }
-  };
+      if (attempt < 3) {
+        console.warn(`⏳ Спроба ${attempt} не вдалася. Повторюю...`);
+        getJSONP(url, callbackName, callback, attempt + 1);
+      } else {
+        handleError("Запит перевищив час очікування. Перевірте з'єднання.");
+        callback({ error: 'Timeout' });
+      }
+    }, 8000);
 
-  script.src = fullUrl;
-  document.body.appendChild(script);
-}
+    window[callbackName] = function(data) {
+      try {
+        clearTimeout(timeout);
+        if (data && data.error) {
+          handleError('Помилка сервера: ' + data.error);
+        }
+        callback(data);
+      } finally {
+        delete window[callbackName];
+        script.remove();
+      }
+    };
+
+    script.onerror = function() {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      script.remove();
+
+      if (attempt < 3) {
+        console.warn(`⚠️ Спроба ${attempt} не вдалася. Повторюю...`);
+        getJSONP(url, callbackName, callback, attempt + 1);
+      } else {
+        handleError('Не вдалося завантажити тест. Повторіть спробу.');
+        callback({ error: 'Network error' });
+      }
+    };
+
+    script.src = fullUrl;
+    document.body.appendChild(script);
+  }
 
   function postFormJSONP(url, payload, callbackName, callback) {
     const iframeName = 'hidden_iframe_' + Date.now();
@@ -594,20 +607,21 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
 
-    window[callbackName] = function(data) {
-      try { callback(data); }
-      finally {
-        delete window[callbackName];
-        setTimeout(() => iframe.remove(), 300);
-        setTimeout(() => form.remove(), 300);
-      }
-    };
-
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = `${url}?callback=${callbackName}`;
     form.target = iframeName;
     form.style.display = 'none';
+
+    window[callbackName] = function(data) {
+      try {
+        callback(data);
+      } finally {
+        delete window[callbackName];
+        setTimeout(() => iframe.remove(), 300);
+        setTimeout(() => form.remove(), 300);
+      }
+    };
 
     const input = document.createElement('input');
     input.type = 'hidden';
@@ -632,14 +646,17 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
   function createOptionRadio(name, value, text, checked, onChange) {
     const wrap = document.createElement('label');
     wrap.className = 'opt';
+
     const input = document.createElement('input');
     input.type = 'radio';
     input.name = name;
     input.value = value;
     if (checked) input.checked = true;
     input.addEventListener('change', onChange);
+
     const span = document.createElement('div');
     span.textContent = text;
+
     wrap.append(input, span);
     return wrap;
   }
@@ -647,13 +664,16 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
   function createOptionCheckbox(id, value, text, checked, onChange) {
     const wrap = document.createElement('label');
     wrap.className = 'opt';
+
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.value = value;
     if (checked) input.checked = true;
     input.addEventListener('change', onChange);
+
     const span = document.createElement('div');
     span.textContent = text;
+
     wrap.append(input, span);
     return wrap;
   }
@@ -714,6 +734,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
         sec.questions.forEach((q, i) => {
           const qc = document.createElement('div');
           qc.className = 'app-card question-card';
+
           const title = document.createElement('div');
           title.className = 'question-title';
           title.textContent = `${i + 1}. ${q.q}`;
@@ -721,6 +742,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
 
           const opts = document.createElement('div');
           opts.className = 'options';
+
           q.options.forEach((opt, idx) => {
             const checked = String(appState.answers[q.id] ?? '') === String(idx);
             opts.appendChild(createOptionRadio(q.id, idx, opt, checked, () => {
@@ -729,6 +751,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
               updateProgress();
             }));
           });
+
           qc.appendChild(opts);
           body.appendChild(qc);
         });
@@ -737,6 +760,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
       else if (sec.type === 'matching' || sec.type === 'dragdrop') {
         const qc = document.createElement('div');
         qc.className = 'app-card question-card';
+
         const title = document.createElement('div');
         title.className = 'question-title';
         title.textContent = sec.data.q;
@@ -746,16 +770,19 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
           const row = document.createElement('div');
           row.style.marginBottom = '12px';
           row.innerHTML = `<div class="small muted" style="margin-bottom:6px;">${item}</div>`;
+
           const select = document.createElement('select');
           select.className = 'select';
           select.innerHTML = `<option value="">— Оберіть —</option>` +
             sec.data.options.map((o, idx) => `<option value="${idx}">${o}</option>`).join('');
+
           select.value = appState.answers[`${sec.data.id}_${i}`] ?? '';
           select.addEventListener('change', () => {
             appState.answers[`${sec.data.id}_${i}`] = select.value;
             saveLocalState();
             updateProgress();
           });
+
           row.appendChild(select);
           qc.appendChild(row);
         });
@@ -767,9 +794,11 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
         const qc = document.createElement('div');
         qc.className = 'app-card question-card';
         qc.innerHTML = `<div class="question-title">${sec.data.q}</div>`;
+
         const opts = document.createElement('div');
         opts.className = 'options';
         const saved = Array.isArray(appState.answers[sec.data.id]) ? appState.answers[sec.data.id] : [];
+
         sec.data.options.forEach((opt, idx) => {
           opts.appendChild(createOptionCheckbox(sec.data.id, idx, opt, saved.includes(String(idx)), (e) => {
             let arr = Array.isArray(appState.answers[sec.data.id]) ? [...appState.answers[sec.data.id]] : [];
@@ -780,6 +809,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
             updateProgress();
           }));
         });
+
         qc.appendChild(opts);
         body.appendChild(qc);
       }
@@ -787,6 +817,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
       else if (sec.type === 'blanks') {
         const qc = document.createElement('div');
         qc.className = 'app-card question-card';
+
         const row = document.createElement('div');
         row.className = 'question-title';
         row.textContent = `${sec.data.textBefore} _____ ${sec.data.textAfter}`;
@@ -797,12 +828,14 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
           select.className = 'select';
           select.innerHTML = `<option value="">— Оберіть —</option>` +
             blank.options.map((o, idx) => `<option value="${idx}">${o}</option>`).join('');
+
           select.value = appState.answers[`${sec.data.id}_blank${i}`] ?? '';
           select.addEventListener('change', () => {
             appState.answers[`${sec.data.id}_blank${i}`] = select.value;
             saveLocalState();
             updateProgress();
           });
+
           qc.appendChild(select);
         });
 
@@ -813,6 +846,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
         const qc = document.createElement('div');
         qc.className = 'app-card question-card';
         qc.innerHTML = `<div class="question-title">${sec.data.q}</div>`;
+
         const ta = document.createElement('textarea');
         ta.className = 'textarea';
         ta.placeholder = 'Введіть коротку відповідь...';
@@ -822,6 +856,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
           saveLocalState();
           updateProgress();
         });
+
         qc.appendChild(ta);
         body.appendChild(qc);
       }
@@ -835,16 +870,19 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
           const holder = document.createElement('div');
           holder.style.marginBottom = '12px';
           holder.innerHTML = `<div class="small muted" style="margin-bottom:6px;">Позиція ${pos + 1}</div>`;
+
           const select = document.createElement('select');
           select.className = 'select';
           select.innerHTML = `<option value="">— Оберіть —</option>` +
             sec.items.map(item => `<option value="${item.id}">${item.text}</option>`).join('');
+
           select.value = appState.answers[`${sec.id}_pos${pos}`] ?? '';
           select.addEventListener('change', () => {
             appState.answers[`${sec.id}_pos${pos}`] = select.value;
             saveLocalState();
             updateProgress();
           });
+
           holder.appendChild(select);
           qc.appendChild(holder);
         }
@@ -867,8 +905,10 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
           const block = document.createElement('div');
           block.style.marginTop = '12px';
           block.innerHTML = `<div class="question-title">${i + 1}. ${q.q}</div>`;
+
           const opts = document.createElement('div');
           opts.className = 'options';
+
           q.options.forEach((opt, idx) => {
             const checked = String(appState.answers[q.id] ?? '') === String(idx);
             opts.appendChild(createOptionRadio(q.id, idx, opt, checked, () => {
@@ -877,6 +917,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
               updateProgress();
             }));
           });
+
           block.appendChild(opts);
           qc.appendChild(block);
         });
@@ -893,10 +934,12 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
             Порада: наведіть порівняння, причини, наслідки, використайте історичні поняття.
           </div>
         `;
+
         const ta = document.createElement('textarea');
         ta.className = 'textarea';
         ta.placeholder = 'Напишіть розгорнуту відповідь...';
         ta.value = appState.answers.openAnswer || '';
+
         qc.appendChild(ta);
         bindOpenTextareaTracking(ta);
         body.appendChild(qc);
@@ -912,6 +955,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
 
   function autosaveRemote() {
     if (!appState.sessionId) return;
+
     postJSON({
       action: 'autosave',
       sessionId: appState.sessionId,
@@ -933,6 +977,7 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
       alert("Введіть прізвище та ім'я.");
       return;
     }
+
     if (!className) {
       alert("Введіть клас.");
       return;
@@ -940,41 +985,42 @@ function getJSONP(url, callbackName, callback, attempt = 1) {
 
     el.startBtn.disabled = true;
 
-getJSON(GAS_URL, (data) => {
-  el.startBtn.disabled = false;
-  
-  if (data.error) {
-    handleError('Помилка завантаження тесту: ' + data.error);
-    return;
+    getJSON(GAS_URL, (data) => {
+      el.startBtn.disabled = false;
+
+      if (data.error) {
+        handleError('Помилка завантаження тесту: ' + data.error);
+        return;
+      }
+
+      if (!data.sessionId || !data.variant) {
+        handleError('Некоректні дані від сервера.');
+        return;
+      }
+
+      appState.sessionId = data.sessionId;
+      appState.variant = data.variant;
+      appState.studentName = studentName;
+      appState.className = className;
+      appState.startTime = data.startTime;
+      appState.timeLeft = data.variant.duration || 1500;
+      appState.answers = {};
+      appState.openActionsCount = 0;
+      appState.telemetry = {
+        pasteCount: 0,
+        blurCount: 0,
+        keydownCount: 0,
+        inputEventsCount: 0,
+        backspaceCount: 0,
+        focusLossSeconds: 0,
+        finalTextLength: 0
+      };
+
+      saveLocalState();
+      renderTest();
+    });
   }
 
-  if (!data.sessionId || !data.variant) {
-    handleError('Некоректні дані від сервера.');
-    return;
-  }
-
-  appState.sessionId = data.sessionId;
-  appState.variant = data.variant;
-  appState.studentName = studentName;
-  appState.className = className;
-  appState.startTime = data.startTime;
-  appState.timeLeft = data.variant.duration || 1500;
-  appState.answers = {};
-  appState.openActionsCount = 0;
-  appState.telemetry = {
-    pasteCount: 0,
-    blurCount: 0,
-    keydownCount: 0,
-    inputEventsCount: 0,
-    backspaceCount: 0,
-    focusLossSeconds: 0,
-    finalTextLength: 0
-  };
-
-  saveLocalState();
-  renderTest();
-});
-  }
   function fillResults(resp) {
     el.resultClosed.textContent = Number(resp.closedScore || 0).toFixed(2);
     el.resultOpenAuto.textContent = Number(resp.openAutoScore || 0).toFixed(2);
@@ -988,6 +1034,7 @@ getJSON(GAS_URL, (data) => {
     clearInterval(appState.timerInterval);
 
     const payload = {
+      action: 'submit',
       sessionId: appState.sessionId,
       studentName: appState.studentName,
       className: appState.className,
@@ -1001,21 +1048,22 @@ getJSON(GAS_URL, (data) => {
     };
 
     el.submitBtn.disabled = true;
-postJSON(payload, (resp) => {
-  el.submitBtn.disabled = false;
 
-  if (!resp || !resp.success) {
-    handleError(resp?.error || 'Не вдалося завершити тест. Спробуйте ще раз.');
-    // Зберегти стан для повторної спроби
-    saveLocalState();
-    return;
+    postJSON(payload, (resp) => {
+      el.submitBtn.disabled = false;
+
+      if (!resp || !resp.success) {
+        handleError(resp?.error || 'Не вдалося завершити тест. Спробуйте ще раз.');
+        saveLocalState();
+        return;
+      }
+
+      appState.result = resp;
+      fillResults(resp);
+      clearLocalState();
+      switchScreen('result');
+    });
   }
-
-  appState.result = resp;
-  fillResults(resp);
-  clearLocalState();
-  switchScreen('result');
-});
 
   function initAnimationsAndAuto() {
     setInterval(() => {
