@@ -974,7 +974,7 @@ getJSON(GAS_URL, (data) => {
   saveLocalState();
   renderTest();
 });
-
+  }
   function fillResults(resp) {
     el.resultClosed.textContent = Number(resp.closedScore || 0).toFixed(2);
     el.resultOpenAuto.textContent = Number(resp.openAutoScore || 0).toFixed(2);
